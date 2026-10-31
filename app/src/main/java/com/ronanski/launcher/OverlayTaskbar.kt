@@ -66,7 +66,13 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
-        ).apply { gravity = Gravity.BOTTOM }
+        ).apply {
+            gravity = Gravity.BOTTOM
+            // Sit above the system navigation bar (Xiaomi's 3 buttons), never on top of it.
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                fitInsetsTypes = android.view.WindowInsets.Type.navigationBars()
+            }
+        }
         try {
             wm.addView(frame, p)
             root = frame
@@ -97,6 +103,13 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
         val p = params ?: return
         val r = root ?: return
         p.height = if (expanded) WindowManager.LayoutParams.MATCH_PARENT else WindowManager.LayoutParams.WRAP_CONTENT
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            p.fitInsetsTypes = if (expanded) {
+                android.view.WindowInsets.Type.navigationBars() or android.view.WindowInsets.Type.statusBars()
+            } else {
+                android.view.WindowInsets.Type.navigationBars()
+            }
+        }
         p.flags = if (expanded) {
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
         } else {

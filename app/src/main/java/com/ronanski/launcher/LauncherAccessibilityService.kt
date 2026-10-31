@@ -22,7 +22,12 @@ class LauncherAccessibilityService : AccessibilityService() {
     }
 
     /** Shows/hides the navigation gesture strips according to the launcher settings. */
-    fun refreshOverlay() {
+    fun refreshOverlay() = try {
+        refreshOverlayUnsafe()
+    } catch (e: Exception) {
+    }
+
+    private fun refreshOverlayUnsafe() {
         val settings = (applicationContext as LauncherApp).settings
         val o = overlay ?: NavGestureOverlay(this).also { overlay = it }
         o.apply(settings.navGestures, settings.navGestureSize)

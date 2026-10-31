@@ -241,7 +241,7 @@ private fun TaskbarApp(
                 add(MenuEntry("Move left") { settings.moveInTaskbar(app.key, -1) })
                 add(MenuEntry("Move right") { settings.moveInTaskbar(app.key, 1) })
             }
-            if (running) add(MenuEntry("Close") { repo.closeRecent(listOf(app.key)) })
+            if (running) add(MenuEntry("Remove from taskbar") { repo.closeRecent(listOf(app.key)) })
         }
         AppContextMenu(menu, { menu = false }, app, entries, onLaunched)
     }

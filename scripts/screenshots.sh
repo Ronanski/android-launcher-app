@@ -146,7 +146,7 @@ adb shell input tap $((258 * DP)) "$TBY"
 shot 10-task-view
 
 # 11) Task View -> Clear all (apps should disappear from Task View and the taskbar)
-adb shell input tap $((W - 220 * DP)) $((50 * DP))
+adb shell input tap $((W - 210 * DP)) $((50 * DP))
 shot 11-task-view-cleared
 adb shell input keyevent KEYCODE_BACK
 

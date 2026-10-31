@@ -533,7 +533,7 @@ fun TaskView(settings: LauncherSettings, repo: AppRepository, font: FontFamily, 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Recent apps", color = Ui.text, fontSize = 22.sp, fontFamily = font, modifier = Modifier.weight(1f))
                 if (recent.isNotEmpty()) {
-                    SmallButton("Clear all", font) { repo.closeRecent(recent.map { it.key }) }
+                    SmallButton("Clear list", font) { repo.closeRecent(recent.map { it.key }) }
                     Spacer(Modifier.width(8.dp))
                 }
                 SmallButton("Android recents", font) {

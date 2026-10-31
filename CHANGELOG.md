@@ -2,6 +2,12 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.7.2 — 2026-10-31
+
+- Nasa ibabaw na ng navigation bar (ang 3 button ng Xiaomi) ang overlay taskbar, at hindi na nito tinatakpan ang mga iyon.
+- Mas malinaw na pangalan: "Remove from taskbar" (dati "Close") at "Clear list" (dati "Clear all"). Hindi kayang isara ng launcher ang window ng ibang app, kaya tinatanggal lang ng mga ito ang app sa listahan.
+- Mas matatag ang accessibility service: hindi na ito babagsak kapag nagka-error ang overlay.
+
 ## 0.7.1 — 2026-10-31
 
 - **Ayos sa crash:** nagka-crash ang launcher kapag naka-on ang "Show the taskbar over all apps" sa v0.7.0. Nakita ito sa emulator test.
