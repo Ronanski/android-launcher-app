@@ -322,6 +322,23 @@ private fun SettingsPageContent(
             }
 
             SettingsPage.TASKBAR -> {
+                card {
+                    SwitchRow("Show the taskbar over all apps (Start and panels open above any app or floating window)", s.overlayTaskbar) {
+                        s.overlayTaskbar = it
+                        if (it && LauncherAccessibilityService.instance == null) {
+                            Actions.toast(context, "Turn on the Pad Launcher accessibility service")
+                            Actions.openAccessibilitySettings(context)
+                        }
+                        LauncherAccessibilityService.instance?.refreshOverlay()
+                    }
+                }
+                card {
+                    Text(
+                        "Apps don't resize around it, so the taskbar covers the bottom strip of the app you're using.",
+                        color = Ui.subtle,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
                 card { SwitchRow("Center taskbar icons (off = left, like Windows 10)", s.taskbarCentered) { s.taskbarCentered = it } }
                 card {
                     SwitchRow("Show open & recent apps on the taskbar", s.showRecentApps) {

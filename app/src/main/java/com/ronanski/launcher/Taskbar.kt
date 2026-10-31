@@ -92,6 +92,7 @@ fun Taskbar(
     panel: Panel,
     onPanel: (Panel) -> Unit,
     onRename: (AppInfo) -> Unit,
+    inOverlay: Boolean = false,
 ) {
     val apps = repo.apps
     val byKey = remember(apps) { apps.associateBy { it.key } }
@@ -112,7 +113,7 @@ fun Taskbar(
         Modifier
             .fillMaxWidth()
             .background(panelColor(settings))
-            .navigationBarsPadding(),
+            .then(if (inOverlay) Modifier else Modifier.navigationBarsPadding()),
     ) {
         val compact = maxWidth < 600.dp
         Row(

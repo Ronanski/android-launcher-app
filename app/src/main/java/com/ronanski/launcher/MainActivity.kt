@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
         )
         val app = launcherApp
         app.widgets.cleanup(app.settings.desktop)
+        handleSettingsExtra(intent)
         LauncherUi.openSettings = { page ->
             if (page != null) settingsPage.value = page
             panel.value = Panel.SETTINGS
@@ -109,6 +110,14 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         panel.value = Panel.NONE
+        handleSettingsExtra(intent)
+    }
+
+    private fun handleSettingsExtra(intent: Intent?) {
+        val page = intent?.getStringExtra(LauncherUi.EXTRA_SETTINGS_PAGE) ?: return
+        intent.removeExtra(LauncherUi.EXTRA_SETTINGS_PAGE)
+        SettingsPage.entries.firstOrNull { it.name == page }?.let { settingsPage.value = it }
+        panel.value = Panel.SETTINGS
     }
 
     override fun onDestroy() {

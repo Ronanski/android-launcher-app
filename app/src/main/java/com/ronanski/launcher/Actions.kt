@@ -50,9 +50,7 @@ object Actions {
             GestureAction.POWER_MENU ->
                 needsService(context) { global(AccessibilityService.GLOBAL_ACTION_POWER_DIALOG) }
             GestureAction.LAUNCHER_SETTINGS ->
-                LauncherUi.openSettings?.invoke(null) ?: context.startActivity(
-                    Intent(context, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                )
+                LauncherUi.showSettings(context, null)
         }
     }
 

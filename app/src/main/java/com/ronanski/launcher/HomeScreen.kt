@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -62,7 +64,10 @@ fun HomeScreen(
         panel.value = Panel.NONE
     }
 
-    fun run(actionName: String) = Actions.perform(context, GestureAction.from(actionName)) { panel.value = Panel.START }
+    fun run(actionName: String) = Actions.perform(context, GestureAction.from(actionName)) {
+        val overlay = LauncherUi.overlayPanel
+        if (LauncherUi.overlayActive.value && overlay != null) overlay(Panel.START) else panel.value = Panel.START
+    }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -129,14 +134,21 @@ fun HomeScreen(
                     else -> Unit
                 }
             }
-            Taskbar(
-                settings = settings,
-                repo = repo,
-                font = font,
-                panel = panel.value,
-                onPanel = { panel.value = it },
-                onRename = { renameTarget = it },
-            )
+            if (LauncherUi.overlayActive.value) {
+                // The accessibility service draws the taskbar above every app; leave room for it.
+                androidx.compose.foundation.layout.Spacer(
+                    Modifier.fillMaxWidth().navigationBarsPadding().height(52.dp),
+                )
+            } else {
+                Taskbar(
+                    settings = settings,
+                    repo = repo,
+                    font = font,
+                    panel = panel.value,
+                    onPanel = { panel.value = it },
+                    onRename = { renameTarget = it },
+                )
+            }
         }
 
         if (panel.value == Panel.WIDGETS) {

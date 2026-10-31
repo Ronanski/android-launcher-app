@@ -2,6 +2,11 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.7.0 — 2026-10-31
+
+- **Taskbar sa ibabaw ng lahat ng app** (Settings → Taskbar → *Show the taskbar over all apps*). Gumagana ito sa pamamagitan ng accessibility service. Nasa ibabaw na ng anumang app at floating window ang Start, Search, Task View, Notifications, at Quick Settings, kaya hindi na sila natatakpan. Tandaan: hindi lumiliit ang mga app para dito, kaya natatakpan ng taskbar ang ibabang bahagi ng app na gamit mo.
+- Bumubukas na ang Settings ng launcher mula kahit saan (Start, Search, gestures). Dinadala ka nito pabalik sa launcher.
+
 ## 0.6.0 — 2026-10-31
 
 - **Built-in wallpapers:** 6 orihinal na disenyo (Bloom, Glow, Waves, Ribbon, Aurora, Solid) na sumusunod sa accent color mo at sa tema. Nasa Settings → Personalization. Hindi kasama ang wallpapers ng Microsoft dahil may copyright ang mga iyon.

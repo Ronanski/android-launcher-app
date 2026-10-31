@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 class LauncherAccessibilityService : AccessibilityService() {
 
     private var overlay: NavGestureOverlay? = null
+    private var taskbar: OverlayTaskbar? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -25,10 +26,18 @@ class LauncherAccessibilityService : AccessibilityService() {
         val settings = (applicationContext as LauncherApp).settings
         val o = overlay ?: NavGestureOverlay(this).also { overlay = it }
         o.apply(settings.navGestures, settings.navGestureSize)
+        if (settings.overlayTaskbar) {
+            if (taskbar == null) taskbar = OverlayTaskbar(this).also { it.show() }
+        } else {
+            taskbar?.hide()
+            taskbar = null
+        }
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
+        taskbar?.hide()
+        taskbar = null
         refreshOverlay()
     }
 
@@ -49,6 +58,8 @@ class LauncherAccessibilityService : AccessibilityService() {
     private fun clear() {
         overlay?.remove()
         overlay = null
+        taskbar?.hide()
+        taskbar = null
         if (instance === this) instance = null
         connected.value = false
     }

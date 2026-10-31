@@ -124,6 +124,8 @@ class LauncherSettings(context: Context) {
     var navGestures by boolPref("nav_gestures", false)
     var navGestureSize by intPref("nav_gesture_size", 14)
     var taskbarNavButtons by boolPref("taskbar_nav_buttons", true)
+    /** Draw the taskbar (and its Start / flyouts) above every app via the accessibility service. */
+    var overlayTaskbar by boolPref("overlay_taskbar", false)
     var clock24h by boolPref("clock_24h", false)
     var startColumns by intPref("start_columns", 6)
     var panelOpacity by intPref("panel_opacity", 96)

@@ -58,6 +58,17 @@ object AppLaunch {
         }
     }
 
+    /** Opens Pad Launcher's own App info page (e.g. to grant a permission). */
+    fun openAppDetails(context: Context) {
+        try {
+            context.startActivity(
+                Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        } catch (e: Exception) {
+        }
+    }
+
     fun uninstall(context: Context, app: AppInfo) {
         try {
             context.startActivity(

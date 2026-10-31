@@ -208,7 +208,8 @@ fun StartMenu(
                     Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .clickable {
-                            LauncherUi.openSettings?.invoke(null) ?: Actions.perform(context, GestureAction.LAUNCHER_SETTINGS) {}
+                            close()
+                            LauncherUi.showSettings(context, null)
                         }
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -237,9 +238,14 @@ private fun SearchResults(
 ) {
     val context = LocalContext.current
     var contactsAllowed by remember { mutableStateOf(Search.hasContactsPermission(context)) }
-    val askContacts = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-    ) { granted -> contactsAllowed = granted }
+    val hasRegistry = androidx.activity.compose.LocalActivityResultRegistryOwner.current != null
+    val askContacts = if (hasRegistry) {
+        androidx.activity.compose.rememberLauncherForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+        ) { granted -> contactsAllowed = granted }
+    } else {
+        null
+    }
     val calc = remember(query) { Search.calculate(query) }
     val settingsHits = remember(query) { Search.settingsHits(query) }
     val pageHits = remember(query) { Search.launcherPageHits(query) }
@@ -256,7 +262,10 @@ private fun SearchResults(
         if (settingsHits.isNotEmpty() || pageHits.isNotEmpty()) {
             item { SectionHeader("Settings", font) }
             items(pageHits, key = { "page-" + it.name }) { p ->
-                ResultRow(p.title, "Pad Launcher settings", font) { LauncherUi.openSettings?.invoke(p) }
+                ResultRow(p.title, "Pad Launcher settings", font) {
+                    close()
+                    LauncherUi.showSettings(context, p)
+                }
             }
             items(settingsHits, key = { "set-" + it.title }) { hit ->
                 ResultRow(hit.title, "Android settings", font) {
@@ -269,7 +278,12 @@ private fun SearchResults(
         if (!contactsAllowed) {
             item {
                 ResultRow("Search your contacts too", "Tap to allow contacts access", font) {
-                    askContacts.launch(android.Manifest.permission.READ_CONTACTS)
+                    if (askContacts != null) {
+                        askContacts.launch(android.Manifest.permission.READ_CONTACTS)
+                    } else {
+                        close()
+                        AppLaunch.openAppDetails(context)
+                    }
                 }
             }
         } else if (contacts.isEmpty()) {

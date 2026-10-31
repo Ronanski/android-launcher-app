@@ -187,6 +187,23 @@ adb shell input swipe $((W * 6 / 10)) $((H / 3)) $((W * 6 / 10)) $((H * 2 / 3)) 
 shot 20-settings-personalization 4
 adb shell input keyevent KEYCODE_BACK
 
+# 21-22) Taskbar over apps: open another app, then press Start on the overlay taskbar
+write_prefs '    <boolean name="overlay_taskbar" value="true" />
+    <boolean name="taskbar_centered" value="false" />'
+adb shell settings put secure enabled_accessibility_services "$PKG/$PKG.LauncherAccessibilityService"
+adb shell settings put secure accessibility_enabled 1
+go_home
+sleep 4
+adb shell monkey -p com.android.settings -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+sleep 4
+shot 21-overlay-taskbar-over-app 1
+adb shell input tap $((166 * DP)) "$TBY"
+shot 22-overlay-start-over-app
+adb shell input keyevent KEYCODE_BACK
+adb shell settings put secure enabled_accessibility_services ""
+adb shell settings put secure accessibility_enabled 0
+go_home
+
 # 13-14) Portrait tablet
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
