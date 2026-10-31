@@ -134,8 +134,14 @@ adb shell input swipe $((W * 6 / 10)) $((H / 2)) $((W * 6 / 10)) $((H / 5)) 250
 shot 09-personalized-start
 adb shell input keyevent KEYCODE_BACK
 
-# 10) Task View (after Back/Home/Recents, the third taskbar button when the taskbar is left-aligned)
-sleep 1
+# 10) Task View — open a few apps first so there is something in it
+for pkg in com.android.settings com.google.android.deskclock com.google.android.calendar; do
+  adb shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+  sleep 3
+done
+go_home
+sleep 3
+# (after Back/Home/Recents, Task View is the third taskbar button when the taskbar is left-aligned)
 adb shell input tap $((258 * DP)) "$TBY"
 shot 10-task-view
 
