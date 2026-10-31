@@ -11,10 +11,25 @@ import androidx.compose.runtime.mutableStateOf
  */
 class LauncherAccessibilityService : AccessibilityService() {
 
+    private var overlay: NavGestureOverlay? = null
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
         connected.value = true
+        refreshOverlay()
+    }
+
+    /** Shows/hides the navigation gesture strips according to the launcher settings. */
+    fun refreshOverlay() {
+        val settings = (applicationContext as LauncherApp).settings
+        val o = overlay ?: NavGestureOverlay(this).also { overlay = it }
+        o.apply(settings.navGestures, settings.navGestureSize)
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        refreshOverlay()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
@@ -32,6 +47,8 @@ class LauncherAccessibilityService : AccessibilityService() {
     }
 
     private fun clear() {
+        overlay?.remove()
+        overlay = null
         if (instance === this) instance = null
         connected.value = false
     }

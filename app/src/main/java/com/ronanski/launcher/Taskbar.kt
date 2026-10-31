@@ -114,6 +114,10 @@ fun Taskbar(
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (settings.taskbarNavButtons) {
+            NavButtons(onPanel)
+            Spacer(Modifier.width(4.dp))
+        }
         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = if (settings.taskbarCentered) Alignment.Center else Alignment.CenterStart) {
             Row(
                 Modifier.horizontalScroll(rememberScrollState()),
@@ -136,6 +140,28 @@ fun Taskbar(
         }
         Spacer(Modifier.width(8.dp))
         SystemTray(settings, font, panel, ::toggle)
+    }
+}
+
+/** Android Back / Home / Recents, run through the accessibility service. */
+@Composable
+private fun NavButtons(onPanel: (Panel) -> Unit) {
+    val context = LocalContext.current
+    fun global(action: Int) {
+        onPanel(Panel.NONE)
+        if (!LauncherAccessibilityService.perform(action)) {
+            Actions.toast(context, "Turn on the Pad Launcher accessibility service for these buttons")
+            Actions.openAccessibilitySettings(context)
+        }
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TaskbarButton(onClick = { onPanel(Panel.NONE) }) { BackGlyph(Color.White, 20.dp) }
+        TaskbarButton(onClick = { global(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME) }) {
+            HomeGlyph(Color.White, 20.dp)
+        }
+        TaskbarButton(onClick = { global(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_RECENTS) }) {
+            RecentsGlyph(Color.White, 20.dp)
+        }
     }
 }
 

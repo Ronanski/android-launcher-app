@@ -219,3 +219,33 @@ fun SaverGlyph(color: Color, size: Dp) {
         drawLine(color, Offset(s * 0.34f, s * 0.54f), Offset(s * 0.66f, s * 0.54f), w, StrokeCap.Round)
     }
 }
+
+@Composable
+fun BackGlyph(color: Color, size: Dp) {
+    Canvas(Modifier.size(size)) {
+        val s = this.size.minDimension
+        val p = Path().apply {
+            moveTo(s * 0.72f, s * 0.2f)
+            lineTo(s * 0.26f, s * 0.5f)
+            lineTo(s * 0.72f, s * 0.8f)
+            close()
+        }
+        drawPath(p, color, style = Stroke(s * 0.08f, join = StrokeJoin.Round))
+    }
+}
+
+@Composable
+fun HomeGlyph(color: Color, size: Dp) {
+    Canvas(Modifier.size(size)) {
+        val s = this.size.minDimension
+        drawCircle(color, s * 0.3f, Offset(s / 2, s / 2), style = Stroke(s * 0.08f))
+    }
+}
+
+@Composable
+fun RecentsGlyph(color: Color, size: Dp) {
+    Canvas(Modifier.size(size)) {
+        val s = this.size.minDimension
+        drawRoundRect(color, Offset(s * 0.22f, s * 0.22f), Size(s * 0.56f, s * 0.56f), CornerRadius(s * 0.08f), style = Stroke(s * 0.08f))
+    }
+}

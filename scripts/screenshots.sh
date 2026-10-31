@@ -134,9 +134,9 @@ adb shell input swipe $((W * 6 / 10)) $((H / 2)) $((W * 6 / 10)) $((H / 5)) 250
 shot 09-personalized-start
 adb shell input keyevent KEYCODE_BACK
 
-# 10) Task View (third taskbar button when the taskbar is left-aligned)
+# 10) Task View (after Back/Home/Recents, the third taskbar button when the taskbar is left-aligned)
 sleep 1
-adb shell input tap $((122 * DP)) "$TBY"
+adb shell input tap $((258 * DP)) "$TBY"
 shot 10-task-view
 
 # 11) Task View -> Clear all (apps should disappear from Task View and the taskbar)
@@ -150,6 +150,15 @@ adb shell input tap $((W - 175 * DP)) "$TBY"
 sleep 2
 adb shell input tap $((W - 88 * DP)) $((TBY - 66 * DP))
 shot 12-quick-settings-edit
+adb shell input keyevent KEYCODE_BACK
+
+# 17) Settings -> Navigation page
+go_home
+sleep 1
+adb shell input swipe $((W * 6 / 10)) $((H / 3)) $((W * 6 / 10)) $((H * 2 / 3)) 250
+sleep 2
+adb shell input tap $((142 * DP)) $((284 * DP))
+shot 17-settings-navigation
 adb shell input keyevent KEYCODE_BACK
 
 # 13-14) Portrait tablet

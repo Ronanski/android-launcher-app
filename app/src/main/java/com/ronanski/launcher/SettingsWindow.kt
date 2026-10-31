@@ -63,6 +63,7 @@ enum class SettingsPage(val title: String, val subtitle: String) {
     TASKBAR("Taskbar", "Alignment, running apps, clock"),
     START("Start", "Pinned apps layout"),
     MULTITASKING("Windows & multitasking", "Open apps in resizable windows"),
+    NAVIGATION("Navigation", "Gestures, nav buttons, hide Xiaomi's nav bar"),
     GESTURES("Gestures", "Swipe and double-tap actions"),
     APPS("Apps", "Hidden apps"),
     PERMISSIONS("Permissions & setup", "Default home, access settings"),
@@ -345,6 +346,80 @@ private fun SettingsPageContent(
                     )
                 }
                 card { ClickRow("Open Developer options", "") { WindowMode.openDeveloperOptions(context) } }
+            }
+
+            SettingsPage.NAVIGATION -> {
+                card {
+                    SwitchRow("Navigation gestures in all apps", s.navGestures) {
+                        s.navGestures = it
+                        if (it && LauncherAccessibilityService.instance == null) {
+                            Actions.toast(context, "Turn on the Pad Launcher accessibility service")
+                            Actions.openAccessibilitySettings(context)
+                        }
+                        LauncherAccessibilityService.instance?.refreshOverlay()
+                    }
+                }
+                card {
+                    Text(
+                        "• Swipe up from the bottom → Home\n" +
+                            "• Swipe up from the bottom and hold → Recents\n" +
+                            "• Swipe in from the left or right edge → Back",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+                card {
+                    IntSlider("Gesture area size (dp)", s.navGestureSize, 6..40) {
+                        s.navGestureSize = it
+                        LauncherAccessibilityService.instance?.refreshOverlay()
+                    }
+                }
+                card { SwitchRow("Back / Home / Recents buttons on the taskbar", s.taskbarNavButtons) { s.taskbarNavButtons = it } }
+                card {
+                    val canChange = remember(tick) { XiaomiNavBar.canChange(context) }
+                    var hidden by remember(tick) { mutableStateOf(XiaomiNavBar.isHidden(context)) }
+                    Column(Modifier.padding(vertical = 8.dp)) {
+                        if (canChange) {
+                            SwitchRow("Hide Xiaomi navigation bar (everywhere)", hidden) {
+                                if (XiaomiNavBar.setHidden(context, it)) hidden = it
+                                else Actions.toast(context, "The system refused the change")
+                            }
+                            Text(
+                                "Turn on \"Navigation gestures in all apps\" above so you can still go Back / Home / Recents.",
+                                color = Color.Gray,
+                            )
+                        } else {
+                            Text("Hide Xiaomi navigation bar (everywhere)", color = Color.White)
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                "Xiaomi only lets the system launcher hide the 3-button bar. Pad Launcher can do it after a one-time " +
+                                    "permission from a computer:\n" +
+                                    "1. Developer options → turn on USB debugging (and \"USB debugging (Security settings)\" on Xiaomi).\n" +
+                                    "2. Connect the tablet to a PC with Android platform-tools (adb) installed.\n" +
+                                    "3. Run this command on the PC, then come back here:",
+                                color = Color.Gray,
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                XiaomiNavBar.ADB_COMMAND,
+                                color = Color.White,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color.Black.copy(alpha = 0.4f))
+                                    .padding(10.dp),
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            TextButton(onClick = { XiaomiNavBar.copyCommand(context) }) { Text("Copy command") }
+                            Text(
+                                "Experimental: some HyperOS versions ignore or undo this setting.",
+                                color = Color.Gray,
+                            )
+                        }
+                    }
+                }
             }
 
             SettingsPage.GESTURES -> {

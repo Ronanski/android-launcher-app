@@ -2,6 +2,17 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.5.0 — 2026-10-31
+
+Navigation na hindi umaasa sa nav bar ng Xiaomi.
+
+- **Navigation gestures sa lahat ng app** (Settings → Navigation). Gumagana ito sa pamamagitan ng accessibility service:
+  - Swipe pataas mula sa ibaba → Home
+  - Swipe pataas at i-hold → Recents
+  - Swipe papasok mula sa kaliwa o kanang gilid → Back
+- **Back / Home / Recents buttons** sa kaliwa ng taskbar.
+- **Itago ang navigation bar ng Xiaomi** sa lahat ng app (experimental). Kailangan ng isang beses na `adb` command mula sa PC; nasa Settings → Navigation ang buong gabay at ang command.
+
 ## 0.4.1 — 2026-10-31
 
 - **Task View:** may *Clear all* at ✕ na sa bawat app. Sa taskbar, long-press sa bukas na app → *Close*. Tinatanggal nito ang app sa taskbar hanggang gamitin mo ulit, at isinasara ang background process nito.
