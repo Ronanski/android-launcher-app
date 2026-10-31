@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -190,12 +191,16 @@ fun StartMenu(
                                 modifier = Modifier.padding(8.dp),
                             )
                         }
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(settings.startColumns.coerceIn(3, 10)),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            items(pinned, key = { it.key }) { app ->
-                                AppTile(app, repo, settings, font, onRename, close)
+                        BoxWithConstraints(Modifier.fillMaxSize()) {
+                            // Fewer columns on narrow screens so labels aren't cut off.
+                            val fit = (maxWidth / 84.dp).toInt().coerceAtLeast(3)
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(minOf(settings.startColumns.coerceIn(3, 10), fit)),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                items(pinned, key = { it.key }) { app ->
+                                    AppTile(app, repo, settings, font, onRename, close)
+                                }
                             }
                         }
                     }

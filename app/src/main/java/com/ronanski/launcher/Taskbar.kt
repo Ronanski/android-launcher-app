@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -103,43 +104,51 @@ fun Taskbar(
     val accent = Color(settings.accentColor)
     fun toggle(p: Panel) = onPanel(if (panel == p) Panel.NONE else p)
 
-    // Apps area takes the space left of the tray and scrolls if there are too many icons,
-    // so icons never overlap the clock/battery (e.g. in portrait).
-    Row(
+    // Start / Search / Task View are always visible; the apps area takes what's left of the
+    // width and scrolls, so nothing overlaps the tray (portrait tablets and phones).
+    BoxWithConstraints(
         Modifier
             .fillMaxWidth()
             .background(panelColor(settings))
-            .navigationBarsPadding()
-            .height(52.dp)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .navigationBarsPadding(),
     ) {
-        if (settings.taskbarNavButtons) {
-            NavButtons(onPanel)
-            Spacer(Modifier.width(4.dp))
-        }
-        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = if (settings.taskbarCentered) Alignment.Center else Alignment.CenterStart) {
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+        val compact = maxWidth < 600.dp
+        Row(
+            Modifier.fillMaxWidth().height(52.dp).padding(horizontal = if (compact) 4.dp else 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (settings.taskbarNavButtons && !compact) {
+                NavButtons(onPanel)
+                Spacer(Modifier.width(4.dp))
+            }
+            Box(
+                Modifier.weight(1f).fillMaxHeight(),
+                contentAlignment = if (settings.taskbarCentered) Alignment.Center else Alignment.CenterStart,
             ) {
-                TaskbarButton(selected = panel == Panel.START, onClick = { toggle(Panel.START) }) { StartGlyph(accent, 24.dp) }
-                TaskbarButton(selected = panel == Panel.SEARCH, onClick = { toggle(Panel.SEARCH) }) {
-                    Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
-                }
-                TaskbarButton(selected = panel == Panel.TASK_VIEW, onClick = { toggle(Panel.TASK_VIEW) }) {
-                    TaskViewGlyph(Color.White, 22.dp)
-                }
-                (pinned + others).forEach { app ->
-                    key(app.key) {
-                        TaskbarApp(app, repo, settings, accent, app.key in running, onRename) { onPanel(Panel.NONE) }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    TaskbarButton(selected = panel == Panel.START, onClick = { toggle(Panel.START) }) { StartGlyph(accent, 24.dp) }
+                    TaskbarButton(selected = panel == Panel.SEARCH, onClick = { toggle(Panel.SEARCH) }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                    }
+                    TaskbarButton(selected = panel == Panel.TASK_VIEW, onClick = { toggle(Panel.TASK_VIEW) }) {
+                        TaskViewGlyph(Color.White, 22.dp)
+                    }
+                    Row(
+                        Modifier.weight(1f, fill = false).horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        (pinned + others).forEach { app ->
+                            key(app.key) {
+                                TaskbarApp(app, repo, settings, accent, app.key in running, onRename) { onPanel(Panel.NONE) }
+                            }
+                        }
                     }
                 }
             }
+            Spacer(Modifier.width(if (compact) 4.dp else 8.dp))
+            SystemTray(settings, font, panel, ::toggle, compact)
         }
-        Spacer(Modifier.width(8.dp))
-        SystemTray(settings, font, panel, ::toggle)
     }
 }
 
@@ -241,6 +250,7 @@ private fun SystemTray(
     font: FontFamily,
     panel: Panel,
     toggle: (Panel) -> Unit,
+    compact: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -273,8 +283,10 @@ private fun SystemTray(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            WifiGlyph(if (wifi) Color.White else Color.White.copy(alpha = 0.35f), 16.dp)
-            VolumeGlyph(Color.White, 16.dp)
+            if (!compact) {
+                WifiGlyph(if (wifi) Color.White else Color.White.copy(alpha = 0.35f), 16.dp)
+                VolumeGlyph(Color.White, 16.dp)
+            }
             battery?.let { (level, charging) -> BatteryGlyph(level, charging, Color.White) }
         }
         // Clock + date -> Notifications & calendar
@@ -290,7 +302,9 @@ private fun SystemTray(
         ) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(timeFormat.format(Date(now)), color = Color.White, fontSize = 12.sp, fontFamily = font, textAlign = TextAlign.End)
-                Text(dateFormat.format(Date(now)), color = Color.White, fontSize = 12.sp, fontFamily = font, textAlign = TextAlign.End)
+                if (!compact) {
+                    Text(dateFormat.format(Date(now)), color = Color.White, fontSize = 12.sp, fontFamily = font, textAlign = TextAlign.End)
+                }
             }
             if (notifCount > 0) {
                 Spacer(Modifier.width(8.dp))

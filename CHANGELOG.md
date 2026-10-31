@@ -2,6 +2,14 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.5.1 — 2026-10-31
+
+- **Brightness slider:** tama na ang level sa Xiaomi (dati, mga 13% ang pakita kahit max) at sumusunod na sa curve ng slider ng Android.
+- **Open in window:** humihiling na ng window mode diretso sa Android. Experimental pa rin sa HyperOS.
+- **Phone at makikitid na screen:** laging kita ang Start, Search, at Task View. Mag-i-scroll ang mga app sa taskbar, at mas siksik ang tray. Nag-a-adjust na rin ang bilang ng column ng Start menu para hindi maputol ang mga pangalan.
+- Mas madilim ang background ng Task View para mabasa nang maayos.
+- Kasama na rin ang lahat ng laman ng 0.4.1 (Clear all sa recents, Edit sa Quick Settings, nakatagong status bar, ayos sa portrait).
+
 ## 0.5.0 — 2026-10-31
 
 Navigation na hindi umaasa sa nav bar ng Xiaomi.

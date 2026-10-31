@@ -506,7 +506,7 @@ fun TaskView(settings: LauncherSettings, repo: AppRepository, font: FontFamily, 
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.55f))
+            .background(Color(0xF0101010))
             .pointerInput(Unit) { detectTapGestures { onClose() } }
             .padding(32.dp),
     ) {
