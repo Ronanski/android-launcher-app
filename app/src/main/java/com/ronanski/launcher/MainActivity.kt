@@ -13,6 +13,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.view.WindowCompat
@@ -47,7 +48,9 @@ class MainActivity : ComponentActivity() {
             panel.value = Panel.SETTINGS
         }
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
+            val colors = launcherColorsFor(app.settings)
+            MaterialTheme(colorScheme = if (colors.isLight) lightColorScheme() else darkColorScheme()) {
+              CompositionLocalProvider(LocalLauncherColors provides colors) {
                 // Shorter long-press than the system default, so app menus appear quickly.
                 val base = LocalViewConfiguration.current
                 val fast = remember(base) {
@@ -73,6 +76,7 @@ class MainActivity : ComponentActivity() {
                         onAddWidget = ::addWidget,
                     )
                 }
+              }
             }
         }
     }

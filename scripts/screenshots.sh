@@ -167,6 +167,26 @@ adb shell input tap $((142 * DP)) $((284 * DP))
 shot 17-settings-navigation
 adb shell input keyevent KEYCODE_BACK
 
+# 18-20) Light theme: Start, search with calculator, Personalization (wallpapers)
+write_prefs '    <string name="theme_mode">light</string>
+    <boolean name="taskbar_centered" value="false" />'
+go_home
+sleep 4
+adb shell input swipe $((W * 6 / 10)) $((H / 2)) $((W * 6 / 10)) $((H / 5)) 250
+shot 18-light-start
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+adb shell input tap $((210 * DP)) "$TBY"
+sleep 2
+adb shell "input text '12*7+1'"
+shot 19-search-calculator
+adb shell input keyevent KEYCODE_BACK
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+adb shell input swipe $((W * 6 / 10)) $((H / 3)) $((W * 6 / 10)) $((H * 2 / 3)) 250
+shot 20-settings-personalization 4
+adb shell input keyevent KEYCODE_BACK
+
 # 13-14) Portrait tablet
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,9 +24,12 @@ class SettingsActivity : ComponentActivity() {
         enableEdgeToEdge()
         val app = launcherApp
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
-                Surface(Modifier.fillMaxSize(), color = Color(0xFF202020)) {
-                    SettingsContent(app.settings, app.repo, app.updater, page, Modifier.fillMaxSize().systemBarsPadding())
+            val colors = launcherColorsFor(app.settings)
+            MaterialTheme(colorScheme = if (colors.isLight) lightColorScheme() else darkColorScheme()) {
+                CompositionLocalProvider(LocalLauncherColors provides colors) {
+                    Surface(Modifier.fillMaxSize(), color = colors.window) {
+                        SettingsContent(app.settings, app.repo, app.updater, page, Modifier.fillMaxSize().systemBarsPadding())
+                    }
                 }
             }
         }

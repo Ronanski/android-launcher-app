@@ -8,6 +8,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,12 +64,14 @@ enum class SettingsPage(val title: String, val subtitle: String) {
     PERSONALIZATION("Personalization", "Background, colors, fonts"),
     DESKTOP("Desktop & icons", "Grid, icon pack, shapes"),
     TASKBAR("Taskbar", "Alignment, running apps, clock"),
+    NOTIFICATIONS("Notifications", "Hide ongoing or per-app notifications"),
     START("Start", "Pinned apps layout"),
     MULTITASKING("Windows & multitasking", "Open apps in resizable windows"),
     NAVIGATION("Navigation", "Gestures, nav buttons, hide Xiaomi's nav bar"),
     GESTURES("Gestures", "Swipe and double-tap actions"),
     APPS("Apps", "Hidden apps"),
     PERMISSIONS("Permissions & setup", "Default home, access settings"),
+    BACKUP("Backup & restore", "Save or load your layout and settings"),
     UPDATES("Updates & about", "Version, release notes"),
 }
 
@@ -93,8 +98,8 @@ fun SettingsWindow(
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF202020))
-                .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                .background(Ui.window)
+                .border(1.dp, Ui.text.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
                 .pointerInput(Unit) { detectTapGestures { } },
         ) {
             // Title bar
@@ -104,13 +109,13 @@ fun SettingsWindow(
             ) {
                 StartGlyph(Color(settings.accentColor), 14.dp)
                 Spacer(Modifier.width(10.dp))
-                Text("Settings", color = Color.White, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                Text("Settings", color = Ui.text, fontSize = 13.sp, modifier = Modifier.weight(1f))
                 Box(
                     Modifier
                         .size(width = 52.dp, height = 44.dp)
                         .clickable(onClick = onClose),
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White, modifier = Modifier.size(18.dp)) }
+                ) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Ui.text, modifier = Modifier.size(18.dp)) }
             }
             SettingsContent(settings, repo, updater, page, Modifier.fillMaxSize())
         }
@@ -151,7 +156,7 @@ fun SettingsContent(
                 Column(Modifier.fillMaxSize()) {
                     Text(
                         "‹ All settings",
-                        color = Color.White,
+                        color = Ui.text,
                         modifier = Modifier.clickable { showingPage = false }.padding(16.dp),
                     )
                     SettingsPageContent(settings, repo, updater, page.value, Modifier.fillMaxSize())
@@ -167,14 +172,14 @@ private fun NavItem(p: SettingsPage, selected: Boolean, accent: Color, onClick: 
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
-            .background(if (selected) Color.White.copy(alpha = 0.08f) else Color.Transparent)
+            .background(if (selected) Ui.text.copy(alpha = 0.08f) else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(3.dp, 18.dp).background(if (selected) accent else Color.Transparent, RoundedCornerShape(2.dp)))
         Spacer(Modifier.width(12.dp))
-        Text(p.title, color = Color.White, fontSize = 14.sp)
+        Text(p.title, color = Ui.text, fontSize = 14.sp)
     }
 }
 
@@ -213,11 +218,34 @@ private fun SettingsPageContent(
 
     fun open(action: String) = SystemControls.openSettings(context, action)
 
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            val ok = try {
+                context.contentResolver.openOutputStream(uri)?.use { it.write(s.exportJson().toByteArray()) } != null
+            } catch (e: Exception) {
+                false
+            }
+            Actions.toast(context, if (ok) "Backup saved" else "Couldn't save the backup")
+        }
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val text = try {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+            } catch (e: Exception) {
+                null
+            }
+            val ok = text != null && s.importJson(text)
+            if (ok) repo.refreshRecents()
+            Actions.toast(context, if (ok) "Backup restored" else "That file isn't a Pad Launcher backup")
+        }
+    }
+
     LazyColumn(modifier, contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 48.dp)) {
         item {
             Text(
                 page.title,
-                color = Color.White,
+                color = Ui.text,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
@@ -225,7 +253,19 @@ private fun SettingsPageContent(
         }
         when (page) {
             SettingsPage.PERSONALIZATION -> {
-                card { ClickRow("Background", "Change your wallpaper") {
+                card {
+                    Column(Modifier.padding(vertical = 8.dp)) {
+                        Text("Theme", color = Ui.text)
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("dark" to "Dark", "light" to "Light", "system" to "Same as system").forEach { (key, label) ->
+                                ThemeChip(label, s.themeMode == key) { s.themeMode = key }
+                            }
+                        }
+                    }
+                }
+                card { WallpaperGallery(s) }
+                card { ClickRow("Background", "Choose your own picture as wallpaper") {
                     try {
                         context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), "Wallpaper"))
                     } catch (e: Exception) {
@@ -233,7 +273,7 @@ private fun SettingsPageContent(
                 } }
                 card {
                     Column(Modifier.padding(vertical = 8.dp)) {
-                        Text("Accent color", color = Color.White)
+                        Text("Accent color", color = Ui.text)
                         Spacer(Modifier.height(8.dp))
                         ColorRow(ACCENT_COLORS, s.accentColor) { s.accentColor = it }
                     }
@@ -244,7 +284,7 @@ private fun SettingsPageContent(
                 }
                 card {
                     Column(Modifier.padding(vertical = 8.dp)) {
-                        Text("Desktop label color", color = Color.White)
+                        Text("Desktop label color", color = Ui.text)
                         Spacer(Modifier.height(8.dp))
                         ColorRow(LABEL_COLORS, s.labelColor) { s.labelColor = it }
                     }
@@ -257,7 +297,7 @@ private fun SettingsPageContent(
                 card {
                     val cols = s.desktopColumns
                     Column(Modifier.padding(vertical = 4.dp)) {
-                        Text("Desktop grid columns: ${if (cols == 0) "Auto" else cols.toString()}", color = Color.White)
+                        Text("Desktop grid columns: ${if (cols == 0) "Auto" else cols.toString()}", color = Ui.text)
                         Slider(
                             value = cols.toFloat(),
                             onValueChange = { s.desktopColumns = it.roundToInt() },
@@ -305,9 +345,55 @@ private fun SettingsPageContent(
                 card {
                     Text(
                         "Tip: tap the clock for notifications & calendar, and the Wi-Fi/volume/battery icons for quick settings.",
-                        color = Color.Gray,
+                        color = Ui.subtle,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
+                }
+            }
+
+            SettingsPage.NOTIFICATIONS -> {
+                card {
+                    SwitchRow("Hide ongoing notifications (\"… is running\", media, downloads)", s.hideOngoingNotifications) {
+                        s.hideOngoingNotifications = it
+                    }
+                }
+                card {
+                    Text(
+                        "Tip: long-press a notification in the clock flyout → \"Hide notifications from this app\".",
+                        color = Ui.subtle,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+                val hiddenPkgs = s.hiddenNotificationApps.sorted()
+                if (hiddenPkgs.isEmpty()) {
+                    card { Text("No apps hidden from the notification center.", color = Ui.subtle, modifier = Modifier.padding(vertical = 8.dp)) }
+                }
+                items(hiddenPkgs, key = { "nh-$it" }) { pkg ->
+                    CardBox {
+                        val label = remember(pkg) {
+                            try {
+                                context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(pkg, 0)).toString()
+                            } catch (e: Exception) {
+                                pkg
+                            }
+                        }
+                        ClickRow(label, "Hidden — tap to show its notifications again") {
+                            s.hiddenNotificationApps = s.hiddenNotificationApps - pkg
+                        }
+                    }
+                }
+            }
+
+            SettingsPage.BACKUP -> {
+                card {
+                    ClickRow("Back up", "Save your desktop, taskbar, Start and all settings to a file") {
+                        backupLauncher.launch("pad-launcher-backup.json")
+                    }
+                }
+                card {
+                    ClickRow("Restore", "Load a backup file (widgets need to be added again)") {
+                        restoreLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                    }
                 }
             }
 
@@ -316,7 +402,7 @@ private fun SettingsPageContent(
                 card {
                     Text(
                         "Pin apps from Start → All apps: long-press an app → Pin to Start.",
-                        color = Color.Gray,
+                        color = Ui.subtle,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -341,7 +427,7 @@ private fun SettingsPageContent(
                             "3. Restart the tablet.\n\n" +
                             "On Xiaomi HyperOS, Xiaomi's own floating windows can't be opened by other launchers, " +
                             "so some apps may still open full screen. Long-press any app → \"Open in window\" to try it.",
-                        color = Color.Gray,
+                        color = Ui.subtle,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -364,7 +450,7 @@ private fun SettingsPageContent(
                         "• Swipe up from the bottom → Home\n" +
                             "• Swipe up from the bottom and hold → Recents\n" +
                             "• Swipe in from the left or right edge → Back",
-                        color = Color.Gray,
+                        color = Ui.subtle,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -386,10 +472,10 @@ private fun SettingsPageContent(
                             }
                             Text(
                                 "Turn on \"Navigation gestures in all apps\" above so you can still go Back / Home / Recents.",
-                                color = Color.Gray,
+                                color = Ui.subtle,
                             )
                         } else {
-                            Text("Hide Xiaomi navigation bar (everywhere)", color = Color.White)
+                            Text("Hide Xiaomi navigation bar (everywhere)", color = Ui.text)
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 "Xiaomi only lets the system launcher hide the 3-button bar. Pad Launcher can do it after a one-time " +
@@ -397,12 +483,12 @@ private fun SettingsPageContent(
                                     "1. Developer options → turn on USB debugging (and \"USB debugging (Security settings)\" on Xiaomi).\n" +
                                     "2. Connect the tablet to a PC with Android platform-tools (adb) installed.\n" +
                                     "3. Run this command on the PC, then come back here:",
-                                color = Color.Gray,
+                                color = Ui.subtle,
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 XiaomiNavBar.ADB_COMMAND,
-                                color = Color.White,
+                                color = Ui.text,
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 12.sp,
                                 modifier = Modifier
@@ -415,7 +501,7 @@ private fun SettingsPageContent(
                             TextButton(onClick = { XiaomiNavBar.copyCommand(context) }) { Text("Copy command") }
                             Text(
                                 "Experimental: some HyperOS versions ignore or undo this setting.",
-                                color = Color.Gray,
+                                color = Ui.subtle,
                             )
                         }
                     }
@@ -431,7 +517,7 @@ private fun SettingsPageContent(
             SettingsPage.APPS -> {
                 val hiddenApps = repo.apps.filter { it.key in s.hidden }
                 if (hiddenApps.isEmpty()) {
-                    card { Text("No hidden apps. In Start → All apps, long-press an app → Hide.", color = Color.Gray, modifier = Modifier.padding(vertical = 8.dp)) }
+                    card { Text("No hidden apps. In Start → All apps, long-press an app → Hide.", color = Ui.subtle, modifier = Modifier.padding(vertical = 8.dp)) }
                 }
                 items(hiddenApps, key = { it.key }) { app ->
                     CardBox { ClickRow(repo.label(app), "Hidden — tap to show again") { s.toggleHidden(app.key) } }
@@ -476,7 +562,7 @@ private fun SettingsPageContent(
                         "Accessibility or Notification access greyed out? That's Android's \"Restricted settings\" for apps " +
                             "not installed from the Play Store. Tap the greyed-out Pad Launcher entry once, then go to " +
                             "Settings → Apps → Pad Launcher → ⋮ (top right) → Allow restricted settings, and try again.",
-                        color = Color.Gray,
+                        color = Ui.subtle,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -484,7 +570,7 @@ private fun SettingsPageContent(
                     Text(
                         "On Xiaomi: Settings → Apps → Pad Launcher → turn on Autostart and set Battery saver to \"No restrictions\", " +
                             "otherwise HyperOS may stop the accessibility and notification services.",
-                        color = Color.Gray,
+                        color = Ui.subtle,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -514,7 +600,7 @@ private fun SettingsPageContent(
                     Text(
                         "Pad Launcher v${updater.currentVersion}\n\nOn Xiaomi devices, the system recents screen and gesture " +
                             "navigation belong to HyperOS and can't be replaced by any launcher.",
-                        color = Color.Gray,
+                        color = Ui.subtle,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -545,6 +631,78 @@ private fun SettingsPageContent(
     }
 }
 
+@Composable
+private fun ThemeChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        label,
+        color = Ui.text,
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (selected) Ui.text.copy(alpha = 0.16f) else Ui.text.copy(alpha = 0.05f))
+            .border(1.dp, if (selected) Ui.text.copy(alpha = 0.6f) else Color.Transparent, RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    )
+}
+
+/** Built-in wallpapers, previewed in the current accent color and theme. */
+@Composable
+private fun WallpaperGallery(s: LauncherSettings) {
+    val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val accent = s.accentColor
+    val light = LocalLauncherColors.current.isLight
+    var applying by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.padding(vertical = 8.dp)) {
+        Text("Built-in wallpapers", color = Ui.text)
+        Text("Original designs in your accent color. Tap one to set it.", color = Ui.subtle, style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(8.dp))
+        Row(
+            Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Wallpapers.STYLES.forEach { (key, label) ->
+                val preview by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, key, accent, light) {
+                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        Wallpapers.render(key, accent, light, 320, 200).asImageBitmap()
+                    }
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        Modifier
+                            .size(160.dp, 100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(
+                                if (s.wallpaperStyle == key) 3.dp else 1.dp,
+                                if (s.wallpaperStyle == key) Color(accent) else Ui.subtle,
+                                RoundedCornerShape(8.dp),
+                            )
+                            .clickable(enabled = applying == null) {
+                                applying = key
+                                scope.launch {
+                                    val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                                        Wallpapers.applyWallpaper(context, key, accent, light)
+                                    }
+                                    if (ok) s.wallpaperStyle = key
+                                    Actions.toast(context, if (ok) "Wallpaper set" else "Couldn't set the wallpaper")
+                                    applying = null
+                                }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        preview?.let {
+                            androidx.compose.foundation.Image(it, contentDescription = label, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                        }
+                        if (applying == key) Text("Setting…", color = Color.White)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(label, color = Ui.text, fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
 /** One settings row in a rounded "card", like Windows 11 Settings. */
 private fun LazyListScope.card(content: @Composable () -> Unit) {
     item { CardBox(content) }
@@ -557,7 +715,7 @@ private fun CardBox(content: @Composable () -> Unit) {
             .fillMaxWidth()
             .padding(bottom = 4.dp)
             .clip(RoundedCornerShape(6.dp))
-            .background(Color.White.copy(alpha = 0.05f))
+            .background(Ui.text.copy(alpha = 0.05f))
             .padding(horizontal = 16.dp, vertical = 4.dp),
     ) { content() }
 }
@@ -569,8 +727,8 @@ private fun StatusRow(title: String, subtitle: String, ok: Boolean, onClick: () 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White)
-            Text(subtitle, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+            Text(title, color = Ui.text)
+            Text(subtitle, color = Ui.subtle, style = MaterialTheme.typography.bodySmall)
         }
         Text(
             if (ok) "On" else "Off",
@@ -590,7 +748,7 @@ private fun ColorRow(colors: List<Int>, selected: Int, onSelect: (Int) -> Unit) 
                     .background(Color(c), CircleShape)
                     .border(
                         width = if (c == selected) 3.dp else 1.dp,
-                        color = if (c == selected) Color.White else Color.Gray,
+                        color = if (c == selected) Ui.text else Ui.subtle,
                         shape = CircleShape,
                     )
                     .clickable { onSelect(c) },
@@ -611,8 +769,8 @@ private fun ClickRow(title: String, subtitle: String, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
     ) {
-        Text(title, color = Color.White)
-        if (subtitle.isNotEmpty()) Text(subtitle, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+        Text(title, color = Ui.text)
+        if (subtitle.isNotEmpty()) Text(subtitle, color = Ui.subtle, style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -625,7 +783,7 @@ private fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Un
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, color = Color.White, modifier = Modifier.weight(1f))
+        Text(title, color = Ui.text, modifier = Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = onChange)
     }
 }
@@ -633,7 +791,7 @@ private fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Un
 @Composable
 private fun IntSlider(title: String, value: Int, range: IntRange, onChange: (Int) -> Unit) {
     Column(Modifier.padding(vertical = 4.dp)) {
-        Text("$title: $value", color = Color.White)
+        Text("$title: $value", color = Ui.text)
         Slider(
             value = value.toFloat(),
             onValueChange = { onChange(it.roundToInt()) },

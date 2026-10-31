@@ -54,8 +54,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@Composable
+@androidx.compose.runtime.ReadOnlyComposable
 fun panelColor(settings: LauncherSettings): Color =
-    Color(0xFF1F1F1F).copy(alpha = settings.panelOpacity.coerceIn(0, 100) / 100f)
+    LocalLauncherColors.current.panel.copy(alpha = settings.panelOpacity.coerceIn(0, 100) / 100f)
 
 /** Battery level (0-100) and charging state, refreshed every 30 s. */
 @Composable
@@ -128,10 +130,10 @@ fun Taskbar(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     TaskbarButton(selected = panel == Panel.START, onClick = { toggle(Panel.START) }) { StartGlyph(accent, 24.dp) }
                     TaskbarButton(selected = panel == Panel.SEARCH, onClick = { toggle(Panel.SEARCH) }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                        Icon(Icons.Default.Search, contentDescription = "Search", tint = Ui.text)
                     }
                     TaskbarButton(selected = panel == Panel.TASK_VIEW, onClick = { toggle(Panel.TASK_VIEW) }) {
-                        TaskViewGlyph(Color.White, 22.dp)
+                        TaskViewGlyph(Ui.text, 22.dp)
                     }
                     Row(
                         Modifier.weight(1f, fill = false).horizontalScroll(rememberScrollState()),
@@ -164,12 +166,12 @@ private fun NavButtons(onPanel: (Panel) -> Unit) {
         }
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        TaskbarButton(onClick = { onPanel(Panel.NONE) }) { BackGlyph(Color.White, 20.dp) }
+        TaskbarButton(onClick = { onPanel(Panel.NONE) }) { BackGlyph(Ui.text, 20.dp) }
         TaskbarButton(onClick = { global(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME) }) {
-            HomeGlyph(Color.White, 20.dp)
+            HomeGlyph(Ui.text, 20.dp)
         }
         TaskbarButton(onClick = { global(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_RECENTS) }) {
-            RecentsGlyph(Color.White, 20.dp)
+            RecentsGlyph(Ui.text, 20.dp)
         }
     }
 }
@@ -186,7 +188,7 @@ private fun TaskbarButton(
         Modifier
             .size(44.dp)
             .clip(RoundedCornerShape(6.dp))
-            .background(if (selected) Color.White.copy(alpha = 0.12f) else Color.Transparent)
+            .background(if (selected) Ui.text.copy(alpha = 0.12f) else Color.Transparent)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
     ) { content() }
@@ -224,7 +226,7 @@ private fun TaskbarApp(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 2.dp)
                         .size(if (repo.recentKeys.firstOrNull() == app.key) 16.dp else 6.dp, 3.dp)
-                        .background(if (repo.recentKeys.firstOrNull() == app.key) accent else Color.White.copy(alpha = 0.6f), RoundedCornerShape(2.dp)),
+                        .background(if (repo.recentKeys.firstOrNull() == app.key) accent else Ui.text.copy(alpha = 0.6f), RoundedCornerShape(2.dp)),
                 )
             }
         }
@@ -267,7 +269,7 @@ private fun SystemTray(
     val is24h = settings.clock24h
     val timeFormat = remember(is24h) { SimpleDateFormat(if (is24h) "HH:mm" else "h:mm a", Locale.getDefault()) }
     val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
-    val notifCount = NotificationStore.items.value.size
+    val notifCount = NotificationStore.visible(settings).size
     // Tray text is sized in dp so a large system font size can't push it out of the taskbar.
     val density = androidx.compose.ui.platform.LocalDensity.current
     val trayText = with(density) { 12.dp.toSp() }
@@ -281,17 +283,17 @@ private fun SystemTray(
                 .fillMaxHeight()
                 .padding(vertical = 6.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(if (panel == Panel.QUICK) Color.White.copy(alpha = 0.12f) else Color.Transparent)
+                .background(if (panel == Panel.QUICK) Ui.text.copy(alpha = 0.12f) else Color.Transparent)
                 .clickable { toggle(Panel.QUICK) }
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (!compact) {
-                WifiGlyph(if (wifi) Color.White else Color.White.copy(alpha = 0.35f), 16.dp)
-                VolumeGlyph(Color.White, 16.dp)
+                WifiGlyph(if (wifi) Ui.text else Ui.text.copy(alpha = 0.35f), 16.dp)
+                VolumeGlyph(Ui.text, 16.dp)
             }
-            battery?.let { (level, charging) -> BatteryGlyph(level, charging, Color.White) }
+            battery?.let { (level, charging) -> BatteryGlyph(level, charging, Ui.text) }
         }
         // Clock + date -> Notifications & calendar
         Row(
@@ -299,19 +301,19 @@ private fun SystemTray(
                 .fillMaxHeight()
                 .padding(vertical = 6.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(if (panel == Panel.CALENDAR) Color.White.copy(alpha = 0.12f) else Color.Transparent)
+                .background(if (panel == Panel.CALENDAR) Ui.text.copy(alpha = 0.12f) else Color.Transparent)
                 .clickable { toggle(Panel.CALENDAR) }
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    timeFormat.format(Date(now)), color = Color.White, fontSize = trayText, lineHeight = trayText * 1.2f,
+                    timeFormat.format(Date(now)), color = Ui.text, fontSize = trayText, lineHeight = trayText * 1.2f,
                     fontFamily = font, textAlign = TextAlign.End, maxLines = 1, softWrap = false,
                 )
                 if (!compact) {
                     Text(
-                        dateFormat.format(Date(now)), color = Color.White, fontSize = trayText, lineHeight = trayText * 1.2f,
+                        dateFormat.format(Date(now)), color = Ui.text, fontSize = trayText, lineHeight = trayText * 1.2f,
                         fontFamily = font, textAlign = TextAlign.End, maxLines = 1, softWrap = false,
                     )
                 }

@@ -16,12 +16,23 @@ class LauncherSettings(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("launcher_settings", Context.MODE_PRIVATE)
 
+    /** Every pref, so a restored backup can be re-read into the UI at once. */
+    private val allPrefs = mutableListOf<Pref<*>>()
+
     private inner class Pref<T>(
         private val key: String,
-        read: SharedPreferences.() -> T,
+        private val read: SharedPreferences.() -> T,
         private val write: SharedPreferences.Editor.(String, T) -> Unit,
     ) : ReadWriteProperty<Any?, T> {
         private val state = mutableStateOf(prefs.read())
+
+        init {
+            allPrefs += this
+        }
+
+        fun reload() {
+            state.value = prefs.read()
+        }
 
         override fun getValue(thisRef: Any?, property: KProperty<*>): T = state.value
 
@@ -103,6 +114,13 @@ class LauncherSettings(context: Context) {
     var qsTiles by listPref("qs_tiles")
     var hideStatusBar by boolPref("hide_status_bar", true)
     var hideNavBar by boolPref("hide_nav_bar", false)
+
+    // ---- Theme / notifications ----
+    /** "dark", "light" or "system". */
+    var themeMode by stringPref("theme_mode", "dark")
+    var hideOngoingNotifications by boolPref("hide_ongoing_notifs", true)
+    var hiddenNotificationApps by setPref("hidden_notif_apps")
+    var wallpaperStyle by stringPref("wallpaper_style", "")
     var navGestures by boolPref("nav_gestures", false)
     var navGestureSize by intPref("nav_gesture_size", 14)
     var taskbarNavButtons by boolPref("taskbar_nav_buttons", true)
@@ -175,6 +193,58 @@ class LauncherSettings(context: Context) {
 
     fun removeFromDesktop(id: String) {
         desktop = desktop.filterNot { it.id == id }
+    }
+
+    // ---- Backup / restore ----
+
+    /** All settings as JSON (values tagged with their type). */
+    fun exportJson(): String {
+        val root = JSONObject()
+        prefs.all.forEach { (k, v) ->
+            val entry = JSONObject()
+            when (v) {
+                is String -> entry.put("t", "s").put("v", v)
+                is Int -> entry.put("t", "i").put("v", v)
+                is Long -> entry.put("t", "l").put("v", v)
+                is Boolean -> entry.put("t", "b").put("v", v)
+                is Float -> entry.put("t", "f").put("v", v.toDouble())
+                is Set<*> -> entry.put("t", "set").put("v", org.json.JSONArray(v.map { it.toString() }))
+                else -> return@forEach
+            }
+            root.put(k, entry)
+        }
+        return JSONObject().put("app", "Pad Launcher").put("version", 1).put("settings", root).toString(2)
+    }
+
+    /** Replaces all settings with a backup. Widgets are skipped (their ids only exist on the old install). */
+    fun importJson(json: String): Boolean = try {
+        val settingsObj = JSONObject(json).getJSONObject("settings")
+        val editor = prefs.edit().clear()
+        settingsObj.keys().forEach { k ->
+            val e = settingsObj.getJSONObject(k)
+            when (e.getString("t")) {
+                "s" -> {
+                    var value = e.getString("v")
+                    if (k == "desktop") {
+                        value = DesktopItem.toJson(DesktopItem.parseList(value).filterNot { it.isWidget })
+                    }
+                    editor.putString(k, value)
+                }
+                "i" -> editor.putInt(k, e.getInt("v"))
+                "l" -> editor.putLong(k, e.getLong("v"))
+                "b" -> editor.putBoolean(k, e.getBoolean("v"))
+                "f" -> editor.putFloat(k, e.getDouble("v").toFloat())
+                "set" -> {
+                    val arr = e.getJSONArray("v")
+                    editor.putStringSet(k, (0 until arr.length()).map { arr.getString(it) }.toSet())
+                }
+            }
+        }
+        editor.commit()
+        allPrefs.forEach { it.reload() }
+        true
+    } catch (e: Exception) {
+        false
     }
 
     fun rename(key: String, name: String?) {

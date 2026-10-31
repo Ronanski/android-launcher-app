@@ -125,7 +125,7 @@ fun StartMenu(
                 .fillMaxHeight(0.86f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(panelColor(settings))
-                .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+                .border(1.dp, Ui.text.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                 .pointerInput(Unit) { detectTapGestures { } },
         ) {
             Column(Modifier.weight(1f).padding(start = 24.dp, end = 24.dp, top = 20.dp)) {
@@ -148,15 +148,7 @@ fun StartMenu(
                 Spacer(Modifier.height(16.dp))
                 when {
                     query.isNotBlank() -> {
-                        SectionHeader("Best match", font)
-                        if (results.isEmpty()) {
-                            Text("No apps found", color = Color.Gray, fontFamily = font)
-                        }
-                        LazyColumn(Modifier.fillMaxSize()) {
-                            items(results, key = { it.key }) { app ->
-                                AppRow(app, repo, settings, font, onRename, close)
-                            }
-                        }
+                        SearchResults(query, results, repo, settings, font, onRename, close)
                     }
                     showAll -> {
                         SectionHeader("All apps", font, action = "‹ Back") { showAll = false }
@@ -186,7 +178,7 @@ fun StartMenu(
                         if (pinned.isEmpty()) {
                             Text(
                                 "Nothing pinned yet. Open All apps, long-press an app → Pin to Start.",
-                                color = Color.Gray,
+                                color = Ui.subtle,
                                 fontFamily = font,
                                 modifier = Modifier.padding(8.dp),
                             )
@@ -207,7 +199,7 @@ fun StartMenu(
                 }
             }
             // Bottom bar
-            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+            HorizontalDivider(color = Ui.text.copy(alpha = 0.08f))
             Row(
                 Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 24.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -221,14 +213,96 @@ fun StartMenu(
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Settings, contentDescription = null, tint = Ui.text, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Settings", color = Color.White, fontFamily = font)
+                    Text("Settings", color = Ui.text, fontFamily = font)
                 }
                 Spacer(Modifier.weight(1f))
                 PowerButton(close)
             }
         }
+    }
+}
+
+/** Windows-style search: calculator, apps, settings, contacts and web. */
+@Composable
+private fun SearchResults(
+    query: String,
+    apps: List<AppInfo>,
+    repo: AppRepository,
+    settings: LauncherSettings,
+    font: FontFamily,
+    onRename: (AppInfo) -> Unit,
+    close: () -> Unit,
+) {
+    val context = LocalContext.current
+    var contactsAllowed by remember { mutableStateOf(Search.hasContactsPermission(context)) }
+    val askContacts = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted -> contactsAllowed = granted }
+    val calc = remember(query) { Search.calculate(query) }
+    val settingsHits = remember(query) { Search.settingsHits(query) }
+    val pageHits = remember(query) { Search.launcherPageHits(query) }
+    val contacts = remember(query, contactsAllowed) { Search.contacts(context, query) }
+
+    LazyColumn(Modifier.fillMaxSize()) {
+        if (calc != null) {
+            item { SectionHeader("Calculator", font) }
+            item { ResultRow("= $calc", query.trim(), font) {} }
+        }
+        item { SectionHeader("Apps", font) }
+        if (apps.isEmpty()) item { Text("No apps found", color = Ui.subtle, fontFamily = font, modifier = Modifier.padding(8.dp)) }
+        items(apps.take(8), key = { it.key }) { app -> AppRow(app, repo, settings, font, onRename, close) }
+        if (settingsHits.isNotEmpty() || pageHits.isNotEmpty()) {
+            item { SectionHeader("Settings", font) }
+            items(pageHits, key = { "page-" + it.name }) { p ->
+                ResultRow(p.title, "Pad Launcher settings", font) { LauncherUi.openSettings?.invoke(p) }
+            }
+            items(settingsHits, key = { "set-" + it.title }) { hit ->
+                ResultRow(hit.title, "Android settings", font) {
+                    Search.openSetting(context, hit)
+                    close()
+                }
+            }
+        }
+        item { SectionHeader("Contacts", font) }
+        if (!contactsAllowed) {
+            item {
+                ResultRow("Search your contacts too", "Tap to allow contacts access", font) {
+                    askContacts.launch(android.Manifest.permission.READ_CONTACTS)
+                }
+            }
+        } else if (contacts.isEmpty()) {
+            item { Text("No contacts found", color = Ui.subtle, fontFamily = font, modifier = Modifier.padding(8.dp)) }
+        } else {
+            items(contacts, key = { "contact-" + it.id }) { c ->
+                ResultRow(c.name, "Contact", font) {
+                    Search.openContact(context, c)
+                    close()
+                }
+            }
+        }
+        item { SectionHeader("Web", font) }
+        item {
+            ResultRow("Search the web for \"${query.trim()}\"", "Opens your browser", font) {
+                Search.webSearch(context, query.trim())
+                close()
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultRow(title: String, subtitle: String, font: FontFamily, onClick: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+    ) {
+        Text(title, color = Ui.text, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(subtitle, color = Ui.subtle, fontFamily = font, fontSize = 12.sp)
     }
 }
 
@@ -243,7 +317,7 @@ private fun PowerButton(close: () -> Unit) {
                 .clip(RoundedCornerShape(6.dp))
                 .clickable { menu = true },
             contentAlignment = Alignment.Center,
-        ) { PowerGlyph(Color.White, 20.dp) }
+        ) { PowerGlyph(Ui.text, 20.dp) }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
                 text = { Text("Lock") },
@@ -256,7 +330,7 @@ private fun PowerButton(close: () -> Unit) {
             )
             DropdownMenuItem(
                 text = { Text("Power options…") },
-                leadingIcon = { PowerGlyph(Color.White, 20.dp) },
+                leadingIcon = { PowerGlyph(Ui.text, 20.dp) },
                 onClick = {
                     menu = false
                     close()
@@ -270,16 +344,16 @@ private fun PowerButton(close: () -> Unit) {
 @Composable
 private fun SectionHeader(title: String, font: FontFamily, action: String? = null, onAction: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, fontFamily = font, modifier = Modifier.weight(1f))
+        Text(title, color = Ui.text, fontWeight = FontWeight.SemiBold, fontFamily = font, modifier = Modifier.weight(1f))
         if (action != null) {
             Text(
                 action,
-                color = Color.White,
+                color = Ui.text,
                 fontSize = 13.sp,
                 fontFamily = font,
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .background(Ui.text.copy(alpha = 0.08f))
                     .clickable(onClick = onAction)
                     .padding(horizontal = 10.dp, vertical = 4.dp),
             )
@@ -323,7 +397,7 @@ private fun AppTile(
             Spacer(Modifier.height(6.dp))
             Text(
                 repo.label(app),
-                color = Color.White,
+                color = Ui.text,
                 fontSize = 12.sp,
                 fontFamily = font,
                 maxLines = 1,
@@ -372,7 +446,7 @@ private fun AppRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AppIconImage(app, repo, settings, 32.dp)
-            Text(repo.label(app), color = Color.White, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(repo.label(app), color = Ui.text, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         val entries = listOf(MenuEntry("Open in window") { WindowMode.open(context, app); close() }) +
             pinEntries(context, app, settings, onRename) +

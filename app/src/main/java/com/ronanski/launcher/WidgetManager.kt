@@ -153,7 +153,7 @@ fun WidgetView(widgetId: Int, widgets: WidgetManager, width: Dp, height: Dp, mod
         Box(
             modifier.background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center,
-        ) { Text("Widget unavailable", color = Color.White) }
+        ) { Text("Widget unavailable", color = Ui.text) }
         return
     }
     val hostView: AppWidgetHostView = remember(widgetId) { widgets.host.createView(context, widgetId, info) }
@@ -185,14 +185,14 @@ fun WidgetPicker(widgets: WidgetManager, onPick: (AppWidgetProviderInfo) -> Unit
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color(0xF0161616))
+            .background(Ui.window.copy(alpha = 0.97f))
             .pointerInput(Unit) { detectTapGestures { } }
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Add a widget", style = MaterialTheme.typography.headlineSmall, color = Color.White, modifier = Modifier.weight(1f))
+            Text("Add a widget", style = MaterialTheme.typography.headlineSmall, color = Ui.text, modifier = Modifier.weight(1f))
             TextButton(onClick = onClose) { Text("Close") }
         }
         OutlinedTextField(
@@ -205,13 +205,13 @@ fun WidgetPicker(widgets: WidgetManager, onPick: (AppWidgetProviderInfo) -> Unit
         )
         val list = providers
         if (list == null) {
-            Text("Loading widgets…", color = Color.Gray)
+            Text("Loading widgets…", color = Ui.subtle)
         } else {
             val q = query.trim()
             val filtered = list.filter {
                 q.isEmpty() || it.label.contains(q, true) || it.appLabel.contains(q, true)
             }
-            if (filtered.isEmpty()) Text("No widgets found", color = Color.Gray)
+            if (filtered.isEmpty()) Text("No widgets found", color = Ui.subtle)
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(200.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -243,7 +243,7 @@ private fun WidgetCard(provider: WidgetProvider, widgets: WidgetManager, onClick
     Column(
         Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.07f))
+            .background(Ui.text.copy(alpha = 0.07f))
             .clickable(onClick = onClick)
             .padding(12.dp),
     ) {
@@ -253,10 +253,10 @@ private fun WidgetCard(provider: WidgetProvider, widgets: WidgetManager, onClick
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(provider.label, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(provider.label, color = Ui.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(
             "${provider.appLabel} · ${span.first}×${span.second}",
-            color = Color.Gray,
+            color = Ui.subtle,
             style = MaterialTheme.typography.bodySmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

@@ -2,6 +2,14 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.6.0 — 2026-10-31
+
+- **Built-in wallpapers:** 6 orihinal na disenyo (Bloom, Glow, Waves, Ribbon, Aurora, Solid) na sumusunod sa accent color mo at sa tema. Nasa Settings → Personalization. Hindi kasama ang wallpapers ng Microsoft dahil may copyright ang mga iyon.
+- **Light mode:** Dark, Light, o Same as system, para sa taskbar, Start, mga flyout, at Settings.
+- **Notifications:** nakatago na by default ang mga ongoing na notification ("… is running", media, at iba pa). Long-press ang isang notification para itago ang notifications ng app na iyon o buksan ang notification settings nito. May listahan ng mga itinagong app sa Settings → Notifications.
+- **Search:** bukod sa apps, may calculator na (hal. `12*7+1`), Android settings, settings ng launcher, contacts (kailangan ng permiso), at web search.
+- **Backup & restore:** i-save sa file ang desktop, taskbar, Start, at lahat ng settings, at i-load ulit kahit kailan. Kailangang idagdag ulit ang widgets pagkatapos mag-restore.
+
 ## 0.5.2 — 2026-10-31
 
 - Ayos: hindi na napuputol ang orasan at petsa sa taskbar kapag malaki ang system font size.

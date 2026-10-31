@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -90,7 +91,7 @@ fun Flyout(
                 .heightIn(max = 760.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(panelColor(settings))
-                .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+                .border(1.dp, Ui.text.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                 .pointerInput(Unit) { detectTapGestures { } },
             content = content,
         )
@@ -104,13 +105,14 @@ fun CalendarFlyout(settings: LauncherSettings, font: FontFamily, onClose: () -> 
     val context = LocalContext.current
     val tick = LauncherUi.resumeTick.intValue
     val hasAccess = remember(tick) { NotificationStore.hasAccess(context) }
-    val items = NotificationStore.items.value
+    val items = NotificationStore.visible(settings)
+    val hiddenCount = NotificationStore.items.value.size - items.size
     val accent = Color(settings.accentColor)
 
     Flyout(settings, Alignment.BottomEnd, 380.dp, onClose) {
         // Notifications
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Notifications", color = Color.White, fontWeight = FontWeight.SemiBold, fontFamily = font, modifier = Modifier.weight(1f))
+            Text("Notifications", color = Ui.text, fontWeight = FontWeight.SemiBold, fontFamily = font, modifier = Modifier.weight(1f))
             if (items.any { it.clearable }) {
                 SmallButton("Clear all", font) { NotificationStore.clearAll() }
             }
@@ -120,21 +122,24 @@ fun CalendarFlyout(settings: LauncherSettings, font: FontFamily, onClose: () -> 
                 !hasAccess -> Column(Modifier.padding(horizontal = 16.dp)) {
                     Text(
                         "Turn on notification access so your notifications show here, like Windows.",
-                        color = Color.Gray, fontFamily = font,
+                        color = Ui.subtle, fontFamily = font,
                     )
                     Spacer(Modifier.height(8.dp))
                     SmallButton("Turn on", font) { NotificationStore.openSettings(context) }
                 }
                 items.isEmpty() -> Text(
-                    "No new notifications",
-                    color = Color.Gray,
+                    if (hiddenCount > 0) "No new notifications ($hiddenCount hidden)" else "No new notifications",
+                    color = Ui.subtle,
                     fontFamily = font,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(24.dp),
                 )
                 else -> LazyColumn(Modifier.padding(horizontal = 12.dp)) {
                     items(items, key = { it.key }) { item ->
-                        NotificationCard(item, font) {
+                        NotificationCard(
+                            item, font,
+                            onHideApp = { settings.hiddenNotificationApps = settings.hiddenNotificationApps + item.pkg },
+                        ) {
                             NotificationStore.open(context, item)
                             onClose()
                         }
@@ -143,13 +148,15 @@ fun CalendarFlyout(settings: LauncherSettings, font: FontFamily, onClose: () -> 
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.08f)))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Ui.text.copy(alpha = 0.08f)))
         MonthCalendar(accent, font)
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun NotificationCard(item: NotifItem, font: FontFamily, onClick: () -> Unit) {
+private fun NotificationCard(item: NotifItem, font: FontFamily, onHideApp: () -> Unit, onClick: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val appInfo = remember(item.pkg) {
         val pm = context.packageManager
@@ -161,12 +168,23 @@ private fun NotificationCard(item: NotifItem, font: FontFamily, onClick: () -> U
         }
     }
     val (appName, icon: ImageBitmap?) = appInfo
+    Box {
+    androidx.compose.material3.DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+        androidx.compose.material3.DropdownMenuItem(text = { Text("Hide notifications from $appName") }, onClick = {
+            menu = false
+            onHideApp()
+        })
+        androidx.compose.material3.DropdownMenuItem(text = { Text("Notification settings for $appName") }, onClick = {
+            menu = false
+            NotificationStore.openAppNotificationSettings(context, item.pkg)
+        })
+    }
     Column(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.White.copy(alpha = 0.06f))
-            .clickable(onClick = onClick)
+            .background(Ui.text.copy(alpha = 0.06f))
+            .combinedClickable(onClick = onClick, onLongClick = { menu = true })
             .padding(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -176,23 +194,24 @@ private fun NotificationCard(item: NotifItem, font: FontFamily, onClick: () -> U
             }
             Text(
                 "$appName · ${DateUtils.getRelativeTimeSpanString(item.time)}",
-                color = Color.Gray, fontSize = 12.sp, fontFamily = font,
+                color = Ui.subtle, fontSize = 12.sp, fontFamily = font,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
             if (item.clearable) {
                 Icon(
-                    Icons.Default.Close, contentDescription = "Dismiss", tint = Color.Gray,
+                    Icons.Default.Close, contentDescription = "Dismiss", tint = Ui.subtle,
                     modifier = Modifier.size(20.dp).clip(CircleShape).clickable { NotificationStore.dismiss(item) },
                 )
             }
         }
         Spacer(Modifier.height(4.dp))
         if (item.title.isNotBlank()) {
-            Text(item.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(item.title, color = Ui.text, fontWeight = FontWeight.SemiBold, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (item.text.isNotBlank()) {
-            Text(item.text, color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp, fontFamily = font, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(item.text, color = Ui.text.copy(alpha = 0.85f), fontSize = 13.sp, fontFamily = font, maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
+    }
     }
 }
 
@@ -203,13 +222,13 @@ private fun MonthCalendar(accent: Color, font: FontFamily) {
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
         Text(
             today.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
-            color = Color.White, fontWeight = FontWeight.SemiBold, fontFamily = font,
+            color = Ui.text, fontWeight = FontWeight.SemiBold, fontFamily = font,
         )
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 month.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
-                color = Color.White, fontFamily = font, modifier = Modifier.weight(1f),
+                color = Ui.text, fontFamily = font, modifier = Modifier.weight(1f),
             )
             SmallButton("‹", font) { month = month.minusMonths(1) }
             Spacer(Modifier.width(4.dp))
@@ -218,7 +237,7 @@ private fun MonthCalendar(accent: Color, font: FontFamily) {
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth()) {
             listOf("Su", "Mo", "Tu", "We", "Th", "Fr", "Sa").forEach {
-                Text(it, color = Color.Gray, fontSize = 12.sp, fontFamily = font, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                Text(it, color = Ui.subtle, fontSize = 12.sp, fontFamily = font, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
             }
         }
         val offset = month.atDay(1).dayOfWeek.value % 7
@@ -238,7 +257,7 @@ private fun MonthCalendar(accent: Color, font: FontFamily) {
                             ) {
                                 Text(
                                     day.toString(),
-                                    color = if (isToday) Color.Black else Color.White,
+                                    color = if (isToday) Color.Black else Ui.text,
                                     fontSize = 13.sp, fontFamily = font,
                                 )
                             }
@@ -364,40 +383,40 @@ fun QuickSettingsFlyout(settings: LauncherSettings, font: FontFamily, onClose: (
                                         .fillMaxWidth()
                                         .height(48.dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(if (t.on) accent else Color.White.copy(alpha = 0.08f))
+                                        .background(if (t.on) accent else Ui.text.copy(alpha = 0.08f))
                                         .clickable { t.action() },
                                     contentAlignment = Alignment.Center,
-                                ) { t.glyph(if (t.on) Color.Black else Color.White) }
+                                ) { t.glyph(if (t.on) Color.Black else Ui.text) }
                                 Spacer(Modifier.height(6.dp))
-                                Text(t.label, color = Color.White, fontSize = 12.sp, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(t.label, color = Ui.text, fontSize = 12.sp, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                         repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 Spacer(Modifier.height(4.dp))
-                SliderRow({ SunGlyph(Color.White, 20.dp) }, brightness, accent, { dragging = it }) {
+                SliderRow({ SunGlyph(Ui.text, 20.dp) }, brightness, accent, { dragging = it }) {
                     brightness = it
                     SystemControls.setBrightness(context, it)
                 }
-                SliderRow({ VolumeGlyph(Color.White, 20.dp) }, volume, accent, { dragging = it }) {
+                SliderRow({ VolumeGlyph(Ui.text, 20.dp) }, volume, accent, { dragging = it }) {
                     volume = it
                     SystemControls.setVolume(context, it)
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.08f)))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Ui.text.copy(alpha = 0.08f)))
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             battery?.let { (level, charging) ->
-                BatteryGlyph(level, charging, Color.White)
+                BatteryGlyph(level, charging, Ui.text)
                 Spacer(Modifier.width(8.dp))
-                Text(if (charging) "$level% · Charging" else "$level%", color = Color.White, fontFamily = font, fontSize = 13.sp)
+                Text(if (charging) "$level% · Charging" else "$level%", color = Ui.text, fontFamily = font, fontSize = 13.sp)
             }
             Spacer(Modifier.weight(1f))
             SmallButton(if (editing) "Done" else "Edit", font) { editing = !editing }
             Spacer(Modifier.width(6.dp))
             Icon(
-                Icons.Default.Settings, contentDescription = "Android quick settings", tint = Color.White,
+                Icons.Default.Settings, contentDescription = "Android quick settings", tint = Ui.text,
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(4.dp))
@@ -415,8 +434,8 @@ fun QuickSettingsFlyout(settings: LauncherSettings, font: FontFamily, onClose: (
 @Composable
 private fun QsEditor(chosen: List<String>, font: FontFamily, accent: Color, onChange: (List<String>) -> Unit) {
     Column(Modifier.padding(16.dp)) {
-        Text("Edit quick settings", color = Color.White, fontWeight = FontWeight.SemiBold, fontFamily = font)
-        Text("Tick tiles to show them; use the arrows to reorder.", color = Color.Gray, fontSize = 12.sp, fontFamily = font)
+        Text("Edit quick settings", color = Ui.text, fontWeight = FontWeight.SemiBold, fontFamily = font)
+        Text("Tick tiles to show them; use the arrows to reorder.", color = Ui.subtle, fontSize = 12.sp, fontFamily = font)
         Spacer(Modifier.height(8.dp))
         val order = chosen + ALL_QS_TILES.map { it.first }.filter { it !in chosen }
         LazyColumn(Modifier.heightIn(max = 420.dp)) {
@@ -429,7 +448,7 @@ private fun QsEditor(chosen: List<String>, font: FontFamily, accent: Color, onCh
                         onCheckedChange = { checked -> onChange(if (checked) chosen + id else chosen - id) },
                         colors = CheckboxDefaults.colors(checkedColor = accent, checkmarkColor = Color.Black),
                     )
-                    Text(label, color = Color.White, fontFamily = font, modifier = Modifier.weight(1f))
+                    Text(label, color = Ui.text, fontFamily = font, modifier = Modifier.weight(1f))
                     if (on) {
                         val i = chosen.indexOf(id)
                         SmallButton("▲", font) {
@@ -481,12 +500,12 @@ private fun SliderRow(
 fun SmallButton(text: String, font: FontFamily, onClick: () -> Unit) {
     Text(
         text,
-        color = Color.White,
+        color = Ui.text,
         fontSize = 13.sp,
         fontFamily = font,
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
-            .background(Color.White.copy(alpha = 0.08f))
+            .background(Ui.text.copy(alpha = 0.08f))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 5.dp),
     )
@@ -506,13 +525,13 @@ fun TaskView(settings: LauncherSettings, repo: AppRepository, font: FontFamily, 
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0xF0101010))
+            .background(Ui.window.copy(alpha = 0.95f))
             .pointerInput(Unit) { detectTapGestures { onClose() } }
             .padding(32.dp),
     ) {
         Column(Modifier.fillMaxSize()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Recent apps", color = Color.White, fontSize = 22.sp, fontFamily = font, modifier = Modifier.weight(1f))
+                Text("Recent apps", color = Ui.text, fontSize = 22.sp, fontFamily = font, modifier = Modifier.weight(1f))
                 if (recent.isNotEmpty()) {
                     SmallButton("Clear all", font) { repo.closeRecent(recent.map { it.key }) }
                     Spacer(Modifier.width(8.dp))
@@ -525,14 +544,14 @@ fun TaskView(settings: LauncherSettings, repo: AppRepository, font: FontFamily, 
             Spacer(Modifier.height(16.dp))
             when {
                 !settings.showRecentApps || !hasPermission -> Column {
-                    Text("To list your recent apps here, allow Usage access for Pad Launcher.", color = Color.White, fontFamily = font)
+                    Text("To list your recent apps here, allow Usage access for Pad Launcher.", color = Ui.text, fontFamily = font)
                     Spacer(Modifier.height(8.dp))
                     SmallButton("Allow usage access", font) {
                         settings.showRecentApps = true
                         RecentApps.openSettings(context)
                     }
                 }
-                recent.isEmpty() -> Text("No recent apps", color = Color.White, fontFamily = font)
+                recent.isEmpty() -> Text("No recent apps", color = Ui.text, fontFamily = font)
                 else -> LazyVerticalGrid(
                     columns = GridCells.Adaptive(180.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -569,16 +588,16 @@ private fun TaskCard(
         Modifier
             .clip(RoundedCornerShape(10.dp))
             .background(panelColor(settings))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+            .border(1.dp, Ui.text.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         AppIconImage(app, repo, settings, 56.dp)
         Spacer(Modifier.height(10.dp))
-        Text(repo.label(app), color = Color.White, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(repo.label(app), color = Ui.text, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (time > 0) {
-            Text(DateUtils.getRelativeTimeSpanString(time).toString(), color = Color.Gray, fontSize = 12.sp, fontFamily = font)
+            Text(DateUtils.getRelativeTimeSpanString(time).toString(), color = Ui.subtle, fontSize = 12.sp, fontFamily = font)
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -587,7 +606,7 @@ private fun TaskCard(
         }
     }
     Icon(
-        Icons.Default.Close, contentDescription = "Close", tint = Color.White,
+        Icons.Default.Close, contentDescription = "Close", tint = Ui.text,
         modifier = Modifier
             .align(Alignment.TopEnd)
             .padding(6.dp)

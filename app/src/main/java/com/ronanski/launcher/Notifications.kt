@@ -21,6 +21,7 @@ data class NotifItem(
     val intent: PendingIntent?,
     val clearable: Boolean,
     val autoCancel: Boolean,
+    val ongoing: Boolean,
 )
 
 /** Notifications shown in the Windows-style notification center. */
@@ -30,6 +31,24 @@ object NotificationStore {
 
     @Volatile
     var service: LauncherNotificationService? = null
+
+    /** Notifications to show, after the user's "hide ongoing" and per-app filters. */
+    fun visible(settings: LauncherSettings): List<NotifItem> {
+        val hiddenApps = settings.hiddenNotificationApps
+        val hideOngoing = settings.hideOngoingNotifications
+        return items.value.filter { it.pkg !in hiddenApps && !(hideOngoing && it.ongoing) }
+    }
+
+    fun openAppNotificationSettings(context: Context, pkg: String) {
+        try {
+            context.startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, pkg)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        } catch (e: Exception) {
+        }
+    }
 
     fun hasAccess(context: Context): Boolean =
         NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
@@ -123,6 +142,7 @@ class LauncherNotificationService : NotificationListenerService() {
                 intent = n.contentIntent,
                 clearable = sbn.isClearable,
                 autoCancel = n.flags and Notification.FLAG_AUTO_CANCEL != 0,
+                ongoing = sbn.isOngoing,
             )
         }.sortedByDescending { it.time }
     }
