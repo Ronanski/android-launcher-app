@@ -1,0 +1,2 @@
+com.google.android.deskclock: STILL RUNNING
+com.google.android.calendar: STILL RUNNING
