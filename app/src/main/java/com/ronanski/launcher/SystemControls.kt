@@ -121,7 +121,28 @@ object SystemControls {
         return listOf(configured, 2047, 4095, 8191, 16383).firstOrNull { it >= current } ?: current
     }
 
-    fun brightness(context: Context): Float {
+    // Android's brightness slider uses an HLG gamma curve; mirror it so 50% feels like the system's 50%.
+    private const val HLG_R = 0.5f
+    private const val HLG_A = 0.17883277f
+    private const val HLG_B = 0.28466892f
+    private const val HLG_C = 0.55991073f
+
+    private fun linearToGamma(linear: Float): Float {
+        val n = linear.coerceIn(0f, 1f) * 12f
+        val g = if (n <= 1f) kotlin.math.sqrt(n) * HLG_R else HLG_A * kotlin.math.ln(n - HLG_B) + HLG_C
+        return g.coerceIn(0f, 1f)
+    }
+
+    private fun gammaToLinear(gamma: Float): Float {
+        val g = gamma.coerceIn(0f, 1f)
+        val n = if (g <= HLG_R) (g / HLG_R) * (g / HLG_R) else kotlin.math.exp((g - HLG_C) / HLG_A) + HLG_B
+        return (n / 12f).coerceIn(0f, 1f)
+    }
+
+    /** Slider position (0..1, gamma space). */
+    fun brightness(context: Context): Float = linearToGamma(brightnessLinear(context))
+
+    private fun brightnessLinear(context: Context): Float {
         // Prefer the float setting (0..1) when the ROM provides it.
         val f = try {
             Settings.System.getFloat(context.contentResolver, "screen_brightness_float")
@@ -139,7 +160,8 @@ object SystemControls {
             val cr = context.contentResolver
             Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
             val max = maxBrightness(context)
-            Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS, (fraction * max).roundToInt().coerceIn(1, max))
+            val linear = gammaToLinear(fraction)
+            Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS, (linear * max).roundToInt().coerceIn(1, max))
         } catch (e: Exception) {
         }
     }

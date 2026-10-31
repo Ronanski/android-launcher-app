@@ -33,12 +33,15 @@ object WindowMode {
         val bounds = Rect(left.coerceAtLeast(0), top.coerceAtLeast(0), left.coerceAtLeast(0) + w, top.coerceAtLeast(0) + h)
 
         val options = ActivityOptions.makeBasic().setLaunchBounds(bounds)
+        var windowed = false
         try {
-            // WINDOWING_MODE_FREEFORM = 5. Hidden API: works on some ROMs, ignored on others.
+            // WINDOWING_MODE_FREEFORM = 5 (hidden API, reachable thanks to HiddenApiBypass).
             ActivityOptions::class.java.getMethod("setLaunchWindowingMode", Int::class.javaPrimitiveType)
                 .invoke(options, 5)
+            windowed = true
         } catch (e: Throwable) {
         }
+        if (!windowed) Actions.toast(context, "This device doesn't allow launchers to open windows")
         try {
             context.getSystemService(LauncherApps::class.java)
                 .startMainActivity(app.component, app.user, bounds, options.toBundle())

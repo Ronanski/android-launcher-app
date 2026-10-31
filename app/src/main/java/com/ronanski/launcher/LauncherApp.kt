@@ -15,6 +15,12 @@ class LauncherApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            try {
+                org.lsposed.hiddenapibypass.HiddenApiBypass.addHiddenApiExemptions("L")
+            } catch (e: Throwable) {
+            }
+        }
         settings = LauncherSettings(this)
         repo = AppRepository(this, settings)
         updater = Updater(this, settings)

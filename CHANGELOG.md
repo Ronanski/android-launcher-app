@@ -11,6 +11,8 @@ Navigation na hindi umaasa sa nav bar ng Xiaomi.
   - Swipe pataas at i-hold → Recents
   - Swipe papasok mula sa kaliwa o kanang gilid → Back
 - **Back / Home / Recents buttons** sa kaliwa ng taskbar.
+- **Open in window:** humihiling na ang launcher ng window mode diretso sa Android, gamit ang HiddenApiBypass. Ito rin ang mode na gamit ng floating windows ng Xiaomi. Experimental ito sa HyperOS.
+- **Brightness slider:** tama na ang level sa Xiaomi (dati, mga 13% ang pakita kahit max), at sumusunod na sa curve ng slider ng Android.
 - **Itago ang navigation bar ng Xiaomi** sa lahat ng app (experimental). Kailangan ng isang beses na `adb` command mula sa PC; nasa Settings → Navigation ang buong gabay at ang command.
 
 ## 0.4.1 — 2026-10-31
