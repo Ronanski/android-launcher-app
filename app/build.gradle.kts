@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// Single source of truth for the app version. Bump VERSION_NAME for every release.
+val versionProps = Properties().apply { rootProject.file("version.properties").inputStream().use { load(it) } }
+val appVersionName: String = versionProps.getProperty("VERSION_NAME")
+val (vMajor, vMinor, vPatch) = appVersionName.split(".").map { it.toInt() }
 
 android {
     namespace = "com.ronanski.launcher"
@@ -12,8 +19,9 @@ android {
         applicationId = "com.ronanski.launcher"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = vMajor * 10000 + vMinor * 100 + vPatch
+        versionName = appVersionName
+        buildConfigField("String", "GITHUB_REPO", "\"Ronanski/android-launcher-app\"")
     }
 
     // Fixed debug keystore so every CI build has the same signature
@@ -46,6 +54,10 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    lint {
+        checkReleaseBuilds = false
     }
 }
 

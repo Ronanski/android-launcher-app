@@ -57,7 +57,7 @@ class SettingsActivity : ComponentActivity() {
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsScreen(app.settings, app.repo)
+                    SettingsScreen(app.settings, app.repo, app.updater)
                 }
             }
         }
@@ -71,7 +71,7 @@ private val LABEL_COLORS = listOf(
 private enum class Dialog { ICON_PACK, ICON_SHAPE, FONT, SWIPE_UP, SWIPE_DOWN, DOUBLE_TAP }
 
 @Composable
-private fun SettingsScreen(s: LauncherSettings, repo: AppRepository) {
+private fun SettingsScreen(s: LauncherSettings, repo: AppRepository, updater: Updater) {
     val context = LocalContext.current
     var dialog by remember { mutableStateOf<Dialog?>(null) }
     val a11yOn = LauncherAccessibilityService.connected.value
@@ -113,6 +113,27 @@ private fun SettingsScreen(s: LauncherSettings, repo: AppRepository) {
                 "Needed for lock-screen double tap, recents and split-screen gestures",
             ) { Actions.openAccessibilitySettings(context) }
         }
+
+        item { Section("Updates") }
+        item {
+            val info = updater.available
+            val progress = updater.progress
+            when {
+                progress != null -> ClickRow("Downloading v${info?.version}…", "${(progress * 100).roundToInt()}%") {}
+                info != null -> ClickRow("Install update v${info.version}", "You have v${updater.currentVersion}") {
+                    updater.downloadAndInstall()
+                }
+                else -> ClickRow(
+                    "Check for updates",
+                    updater.status.ifEmpty { "Current version: v${updater.currentVersion}" },
+                ) { updater.check(userInitiated = true) }
+            }
+        }
+        item {
+            val notes = updater.available?.notes.orEmpty()
+            ClickRow("Release notes", notes.ifEmpty { "Open the GitHub releases page" }) { updater.openReleasePage() }
+        }
+        item { SwitchRow("Check for updates automatically", s.autoUpdateCheck) { s.autoUpdateCheck = it } }
 
         item { Section("Home screen") }
         item { IntSlider("Home columns", s.homeColumns, 2..10) { s.homeColumns = it } }

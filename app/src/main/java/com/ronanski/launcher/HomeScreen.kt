@@ -7,7 +7,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -108,6 +110,7 @@ fun HomeScreen(settings: LauncherSettings, repo: AppRepository, drawerOpen: Muta
                     .padding(horizontal = 16.dp),
             ) {
                 if (settings.showClock) Clock(settings, font)
+                UpdateBanner(context.launcherApp.updater, font)
                 Spacer(Modifier.weight(1f))
                 if (pinned.isEmpty()) {
                     Text(
@@ -191,6 +194,27 @@ fun HomeScreen(settings: LauncherSettings, repo: AppRepository, drawerOpen: Muta
             },
         )
     }
+}
+
+@Composable
+private fun UpdateBanner(updater: Updater, font: FontFamily) {
+    val info = updater.available ?: return
+    val progress = updater.progress
+    Text(
+        text = if (progress != null) {
+            "Downloading v${info.version}… ${(progress * 100).roundToInt()}%"
+        } else {
+            "Update available: v${info.version} — tap to install"
+        },
+        color = Color.White,
+        fontFamily = font,
+        modifier = Modifier
+            .padding(top = 16.dp)
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
+            .clickable { updater.downloadAndInstall() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    )
 }
 
 @Composable

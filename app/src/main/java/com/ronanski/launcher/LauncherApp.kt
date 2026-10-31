@@ -8,11 +8,14 @@ class LauncherApp : Application() {
         private set
     lateinit var repo: AppRepository
         private set
+    lateinit var updater: Updater
+        private set
 
     override fun onCreate() {
         super.onCreate()
         settings = LauncherSettings(this)
         repo = AppRepository(this, settings)
+        updater = Updater(this, settings)
     }
 }
 

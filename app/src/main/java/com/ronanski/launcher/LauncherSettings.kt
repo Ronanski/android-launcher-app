@@ -36,6 +36,9 @@ class LauncherSettings(context: Context) {
     private fun intPref(key: String, def: Int) =
         Pref<Int>(key, { getInt(key, def) }, { k, v -> putInt(k, v) })
 
+    private fun longPref(key: String, def: Long) =
+        Pref<Long>(key, { getLong(key, def) }, { k, v -> putLong(k, v) })
+
     private fun boolPref(key: String, def: Boolean) =
         Pref<Boolean>(key, { getBoolean(key, def) }, { k, v -> putBoolean(k, v) })
 
@@ -96,6 +99,10 @@ class LauncherSettings(context: Context) {
     var gestureSwipeUp by stringPref("gesture_up", GestureAction.APP_DRAWER.name)
     var gestureSwipeDown by stringPref("gesture_down", GestureAction.NOTIFICATIONS.name)
     var gestureDoubleTap by stringPref("gesture_double_tap", GestureAction.LOCK_SCREEN.name)
+
+    // ---- Updates ----
+    var autoUpdateCheck by boolPref("auto_update_check", true)
+    var lastUpdateCheck by longPref("last_update_check", 0L)
 
     // ---- Apps ----
     var pinned by listPref("pinned")

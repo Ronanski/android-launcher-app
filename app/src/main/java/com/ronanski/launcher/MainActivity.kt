@@ -31,6 +31,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        launcherApp.updater.checkIfDue()
+    }
+
     /** Pressing Home while already on the launcher closes the drawer. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
