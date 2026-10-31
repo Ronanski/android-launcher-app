@@ -69,9 +69,7 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
         ).apply {
             gravity = Gravity.BOTTOM
             // Sit above the system navigation bar (Xiaomi's 3 buttons), never on top of it.
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                fitInsetsTypes = android.view.WindowInsets.Type.navigationBars()
-            }
+            y = systemBarInsets().second
         }
         try {
             wm.addView(frame, p)
@@ -98,17 +96,44 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
         }
     }
 
+    /** (status bar height, navigation bar height) in px, measured from the current window metrics. */
+    private fun systemBarInsets(): Pair<Int, Int> {
+        val w = wm ?: return 0 to 0
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val insets = w.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(
+                android.view.WindowInsets.Type.navigationBars() or android.view.WindowInsets.Type.statusBars(),
+            )
+            val nav = w.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.navigationBars())
+            val status = w.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.statusBars())
+            return status.top to maxOf(nav.bottom, insets.bottom)
+        }
+        val res = service.resources
+        fun dimen(name: String): Int {
+            val id = res.getIdentifier(name, "dimen", "android")
+            return if (id != 0) res.getDimensionPixelSize(id) else 0
+        }
+        return dimen("status_bar_height") to dimen("navigation_bar_height")
+    }
+
+    private fun screenHeight(): Int {
+        val w = wm ?: return service.resources.displayMetrics.heightPixels
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            w.currentWindowMetrics.bounds.height()
+        } else {
+            service.resources.displayMetrics.heightPixels
+        }
+    }
+
     /** Full screen and focusable (for typing in Search) while a panel is open; a thin strip otherwise. */
     private fun setExpanded(expanded: Boolean) {
         val p = params ?: return
         val r = root ?: return
-        p.height = if (expanded) WindowManager.LayoutParams.MATCH_PARENT else WindowManager.LayoutParams.WRAP_CONTENT
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            p.fitInsetsTypes = if (expanded) {
-                android.view.WindowInsets.Type.navigationBars() or android.view.WindowInsets.Type.statusBars()
-            } else {
-                android.view.WindowInsets.Type.navigationBars()
-            }
+        val (top, bottom) = systemBarInsets()
+        p.y = bottom
+        p.height = if (expanded) {
+            (screenHeight() - top - bottom).coerceAtLeast(1)
+        } else {
+            WindowManager.LayoutParams.WRAP_CONTENT
         }
         p.flags = if (expanded) {
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN

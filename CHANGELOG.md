@@ -2,6 +2,10 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.8.1 — 2026-10-31
+
+- Ayos: tinatakpan pa rin ng overlay taskbar ang navigation bar sa v0.7.2. Kinukuwenta na ngayon ang taas ng navigation bar, at inilalagay ang taskbar sa ibabaw nito.
+
 ## 0.8.0 — 2026-10-31
 
 - **Totoong pagsasara ng app**, gaya ng "End task" sa Windows:
