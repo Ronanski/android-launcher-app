@@ -292,7 +292,15 @@ private fun SettingsPageContent(
                         repo.refreshRecents()
                     }
                 }
+                card {
+                    IntSlider("Keep apps on the taskbar after last use (hours)", s.recentHours, 1..24) {
+                        s.recentHours = it
+                        repo.refreshRecents()
+                    }
+                }
                 card { SwitchRow("24-hour clock", s.clock24h) { s.clock24h = it } }
+                card { SwitchRow("Hide Android status bar on the desktop (swipe down from the top to show it)", s.hideStatusBar) { s.hideStatusBar = it } }
+                card { SwitchRow("Hide Android navigation bar on the desktop", s.hideNavBar) { s.hideNavBar = it } }
                 card {
                     Text(
                         "Tip: tap the clock for notifications & calendar, and the Wi-Fi/volume/battery icons for quick settings.",

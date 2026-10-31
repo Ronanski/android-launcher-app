@@ -14,6 +14,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -51,6 +55,12 @@ class MainActivity : ComponentActivity() {
                         override val longPressTimeoutMillis: Long get() = 320L
                     }
                 }
+                // Hide Android's own status / navigation bars on the desktop if the user wants
+                // (the taskbar already shows the time, battery and notifications).
+                val hideStatus = app.settings.hideStatusBar
+                val hideNav = app.settings.hideNavBar
+                val tick = LauncherUi.resumeTick.intValue
+                LaunchedEffect(hideStatus, hideNav, tick) { applySystemBars(hideStatus, hideNav) }
                 CompositionLocalProvider(LocalViewConfiguration provides fast) {
                     // Back never closes the launcher; it only closes the open panel.
                     BackHandler { panel.value = Panel.NONE }
@@ -65,6 +75,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun applySystemBars(hideStatus: Boolean, hideNav: Boolean) {
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (hideStatus) controller.hide(WindowInsetsCompat.Type.statusBars()) else controller.show(WindowInsetsCompat.Type.statusBars())
+        if (hideNav) controller.hide(WindowInsetsCompat.Type.navigationBars()) else controller.show(WindowInsetsCompat.Type.navigationBars())
     }
 
     override fun onStart() {

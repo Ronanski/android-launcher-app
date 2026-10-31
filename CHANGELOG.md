@@ -2,6 +2,16 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.4.1 — 2026-10-31
+
+- **Task View:** may *Clear all* at ✕ na sa bawat app. Sa taskbar, long-press sa bukas na app → *Close*. Tinatanggal nito ang app sa taskbar hanggang gamitin mo ulit, at isinasara ang background process nito.
+- Mas maikli na ang pagbilang sa app bilang "bukas": 4 na oras ang default (dati 12), at pwedeng baguhin sa Settings → Taskbar.
+- **Quick Settings:** may *Edit* na para piliin at ayusin ang mga tile. Mga bagong tile: Hotspot, Display, Sound, Screenshot, Lock, Split screen.
+- Nakatago na ang Android status bar sa desktop, dahil nasa taskbar na ang orasan, baterya, at notifications. I-swipe pababa mula sa itaas para ilabas ito. May setting din para itago ang navigation bar.
+- Ayos: hindi na nagpapatong ang taskbar icons at ang system tray kapag portrait. Mag-i-scroll na ang icons kapag sobrang dami.
+- Ayos: tamang brightness level sa Xiaomi/HyperOS.
+- Mas malawak na automated test sa emulator: portrait, sukat ng phone, pag-clear ng recents, QS editor, at crash log.
+
 ## 0.4.0 — 2026-10-31
 
 Mas Windows na.

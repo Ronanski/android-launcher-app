@@ -96,6 +96,13 @@ class LauncherSettings(context: Context) {
     var taskbarCentered by boolPref("taskbar_centered", true)
     var showRecentApps by boolPref("taskbar_recents", true)
     var openInWindows by boolPref("open_in_windows", false)
+    /** How long an app counts as "open" on the taskbar after it was last used. */
+    var recentHours by intPref("recent_hours", 4)
+    /** App key -> time the user closed it from Task View / taskbar (epoch ms as string). */
+    var dismissedRecents by mapPref("dismissed_recents")
+    var qsTiles by listPref("qs_tiles")
+    var hideStatusBar by boolPref("hide_status_bar", true)
+    var hideNavBar by boolPref("hide_nav_bar", false)
     var clock24h by boolPref("clock_24h", false)
     var startColumns by intPref("start_columns", 6)
     var panelOpacity by intPref("panel_opacity", 96)

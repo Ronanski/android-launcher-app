@@ -44,5 +44,17 @@ class LauncherAccessibilityService : AccessibilityService() {
         val connected = mutableStateOf(false)
 
         fun perform(action: Int): Boolean = instance?.performGlobalAction(action) ?: false
+
+        /** Takes a screenshot after the flyout has closed. */
+        fun screenshotSoon(context: android.content.Context) {
+            if (instance == null || android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P) {
+                Actions.toast(context, "Screenshot needs the accessibility service")
+                Actions.openAccessibilitySettings(context)
+                return
+            }
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                perform(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
+            }, 500)
+        }
     }
 }

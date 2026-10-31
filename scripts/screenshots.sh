@@ -7,6 +7,7 @@ PKG=com.ronanski.launcher
 APK=app/build/outputs/apk/debug/app-debug.apk
 OUT=docs/screenshots
 mkdir -p "$OUT"
+rm -f "$OUT"/*.png "$OUT"/*.txt
 
 adb wait-for-device
 adb install -r "$APK"
@@ -65,7 +66,7 @@ adb shell cmd notification post -t "Battery optimized" demo2 "Pad Launcher is re
 # Status bar height in px (24dp at the emulator density) — desktop coordinates start below it.
 DENSITY=$(adb shell wm density | tr -d '\r' | awk '/Physical density/ {print $3}')
 DP=$((DENSITY / 160))
-SB=$((24 * DP))
+SB=0   # the Android status bar is hidden on the desktop by default
 
 # 1) Windows-style desktop + taskbar
 write_prefs ""
@@ -137,5 +138,48 @@ adb shell input keyevent KEYCODE_BACK
 sleep 1
 adb shell input tap $((122 * DP)) "$TBY"
 shot 10-task-view
+
+# 11) Task View -> Clear all (apps should disappear from Task View and the taskbar)
+adb shell input tap $((W - 220 * DP)) $((50 * DP))
+shot 11-task-view-cleared
+adb shell input keyevent KEYCODE_BACK
+
+# 12) Quick settings -> Edit
+sleep 1
+adb shell input tap $((W - 175 * DP)) "$TBY"
+sleep 2
+adb shell input tap $((W - 88 * DP)) $((TBY - 66 * DP))
+shot 12-quick-settings-edit
+adb shell input keyevent KEYCODE_BACK
+
+# 13-14) Portrait tablet
+adb shell settings put system accelerometer_rotation 0
+adb shell settings put system user_rotation 1
+sleep 3
+go_home
+shot 13-portrait-desktop 4
+PW=$H
+PH=$W
+adb shell input tap $((PW - 175 * DP)) $((PH - 86 * DP))
+shot 14-portrait-quick-settings
+adb shell input keyevent KEYCODE_BACK
+adb shell settings put system user_rotation 0
+sleep 3
+
+# 15-16) Phone-sized screen
+adb shell wm size 1080x2340
+adb shell wm density 440
+sleep 3
+go_home
+shot 15-phone-desktop 4
+adb shell input swipe 540 1400 540 500 250
+shot 16-phone-start
+adb shell input keyevent KEYCODE_BACK
+adb shell wm size reset
+adb shell wm density reset
+
+# Any crashes during the run
+adb logcat -d -b crash > "$OUT/crash-log.txt" || true
+echo "Crash log lines: $(wc -l < "$OUT/crash-log.txt")"
 
 ls -la "$OUT"

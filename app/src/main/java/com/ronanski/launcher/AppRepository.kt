@@ -108,18 +108,41 @@ class AppRepository(private val context: Context, private val settings: Launcher
         scope.launch {
             val packages = withContext(Dispatchers.IO) {
                 try {
-                    RecentApps.recentPackages(context)
+                    RecentApps.recentPackages(context, settings.recentHours.coerceIn(1, 24))
                 } catch (e: Exception) {
                     emptyList()
                 }
             }
             val me = android.os.Process.myUserHandle()
+            val dismissed = settings.dismissedRecents
             val pairs = packages.mapNotNull { (pkg, time) ->
                 apps.firstOrNull { it.component.packageName == pkg && it.user == me }?.let { it.key to time }
-            }
+            }.filter { (key, time) -> time > (dismissed[key]?.toLongOrNull() ?: 0L) }
             recentKeys = pairs.map { it.first }
             recentTimes = pairs.toMap()
         }
+    }
+
+    /**
+     * "Closes" apps from the taskbar / Task View: hides them until they're used again and
+     * stops their background processes (Android doesn't let launchers remove system recents).
+     */
+    fun closeRecent(keys: Collection<String>) {
+        if (keys.isEmpty()) return
+        val now = System.currentTimeMillis().toString()
+        settings.dismissedRecents = settings.dismissedRecents
+            .filterValues { (it.toLongOrNull() ?: 0L) > System.currentTimeMillis() - 7 * 24 * 3600 * 1000L } +
+            keys.associateWith { now }
+        val am = context.getSystemService(android.app.ActivityManager::class.java)
+        val byKey = apps.associateBy { it.key }
+        keys.mapNotNull { byKey[it]?.component?.packageName }.distinct().forEach { pkg ->
+            try {
+                am?.killBackgroundProcesses(pkg)
+            } catch (e: Exception) {
+            }
+        }
+        recentKeys = recentKeys.filter { it !in keys }
+        recentTimes = recentTimes - keys.toSet()
     }
 
     /** Label after applying the user's rename, if any. */

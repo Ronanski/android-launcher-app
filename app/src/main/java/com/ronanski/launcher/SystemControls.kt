@@ -108,15 +108,27 @@ object SystemControls {
         }
     }
 
+    /**
+     * Since Android 11 the int SCREEN_BRIGHTNESS setting is 0..255 on most devices, but some ROMs
+     * (including MIUI/HyperOS) store larger values. Pick the scale from the current value.
+     */
     private fun maxBrightness(context: Context): Int {
+        val current = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 0)
+        if (current <= 255) return 255
         val res = Resources.getSystem()
         val id = res.getIdentifier("config_screenBrightnessSettingMaximum", "integer", "android")
         val configured = if (id != 0) res.getInteger(id) else 255
-        val current = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 0)
-        return maxOf(configured, current, 1)
+        return listOf(configured, 2047, 4095, 8191, 16383).firstOrNull { it >= current } ?: current
     }
 
     fun brightness(context: Context): Float {
+        // Prefer the float setting (0..1) when the ROM provides it.
+        val f = try {
+            Settings.System.getFloat(context.contentResolver, "screen_brightness_float")
+        } catch (e: Exception) {
+            -1f
+        }
+        if (f in 0f..1f && f > 0f) return f
         val value = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128)
         return (value.toFloat() / maxBrightness(context)).coerceIn(0f, 1f)
     }

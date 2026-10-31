@@ -7,6 +7,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -101,33 +103,39 @@ fun Taskbar(
     val accent = Color(settings.accentColor)
     fun toggle(p: Panel) = onPanel(if (panel == p) Panel.NONE else p)
 
-    Box(
+    // Apps area takes the space left of the tray and scrolls if there are too many icons,
+    // so icons never overlap the clock/battery (e.g. in portrait).
+    Row(
         Modifier
             .fillMaxWidth()
             .background(panelColor(settings))
             .navigationBarsPadding()
             .height(52.dp)
             .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            Modifier.align(if (settings.taskbarCentered) Alignment.Center else Alignment.CenterStart),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            TaskbarButton(selected = panel == Panel.START, onClick = { toggle(Panel.START) }) { StartGlyph(accent, 24.dp) }
-            TaskbarButton(selected = panel == Panel.SEARCH, onClick = { toggle(Panel.SEARCH) }) {
-                Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
-            }
-            TaskbarButton(selected = panel == Panel.TASK_VIEW, onClick = { toggle(Panel.TASK_VIEW) }) {
-                TaskViewGlyph(Color.White, 22.dp)
-            }
-            (pinned + others).forEach { app ->
-                key(app.key) {
-                    TaskbarApp(app, repo, settings, accent, app.key in running, onRename) { onPanel(Panel.NONE) }
+        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = if (settings.taskbarCentered) Alignment.Center else Alignment.CenterStart) {
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                TaskbarButton(selected = panel == Panel.START, onClick = { toggle(Panel.START) }) { StartGlyph(accent, 24.dp) }
+                TaskbarButton(selected = panel == Panel.SEARCH, onClick = { toggle(Panel.SEARCH) }) {
+                    Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                }
+                TaskbarButton(selected = panel == Panel.TASK_VIEW, onClick = { toggle(Panel.TASK_VIEW) }) {
+                    TaskViewGlyph(Color.White, 22.dp)
+                }
+                (pinned + others).forEach { app ->
+                    key(app.key) {
+                        TaskbarApp(app, repo, settings, accent, app.key in running, onRename) { onPanel(Panel.NONE) }
+                    }
                 }
             }
         }
-        SystemTray(settings, font, panel, ::toggle, Modifier.align(Alignment.CenterEnd))
+        Spacer(Modifier.width(8.dp))
+        SystemTray(settings, font, panel, ::toggle)
     }
 }
 
@@ -195,6 +203,7 @@ private fun TaskbarApp(
                 add(MenuEntry("Move left") { settings.moveInTaskbar(app.key, -1) })
                 add(MenuEntry("Move right") { settings.moveInTaskbar(app.key, 1) })
             }
+            if (running) add(MenuEntry("Close") { repo.closeRecent(listOf(app.key)) })
         }
         AppContextMenu(menu, { menu = false }, app, entries, onLaunched)
     }
