@@ -54,7 +54,7 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
-        val compose = ComposeView(service).apply { setContent { Content() } }
+        val compose = ComposeView(service).apply { setContent { OverlayContent() } }
         val frame = BackAwareFrame(service) { if (panel.value != Panel.NONE) { panel.value = Panel.NONE; true } else false }
         frame.addView(compose, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         frame.setViewTreeLifecycleOwner(this)
@@ -109,7 +109,7 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
     }
 
     @Composable
-    private fun Content() {
+    private fun OverlayContent() {
         val app = service.applicationContext as LauncherApp
         val settings = app.settings
         val repo = app.repo
