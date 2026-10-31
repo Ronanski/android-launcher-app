@@ -2,18 +2,22 @@ com.google.android.deskclock: closed
 com.google.android.calendar: closed
 --- PadCloser log ---
 --------- beginning of main
-10-31 14:13:32.105  5853  5853 D PadCloser: closing com.google.android.calendar: opening App info
-10-31 14:13:33.224  5853  5853 D PadCloser: no Force stop yet: 3 windows, 26 nodes (event from com.google.android.apps.nexuslauncher)
-10-31 14:13:36.231  5853  5853 D PadCloser: no Force stop yet: 2 windows, 14 nodes (event from com.google.android.apps.nexuslauncher)
-10-31 14:13:36.263  5853  5853 D PadCloser: found 'Force stop' enabled=true clickable=false
-10-31 14:13:36.270  5853  5853 D PadCloser: clicked Force stop: true
-10-31 14:13:36.475  5853  5853 D PadCloser: clicked confirm 'Force stop': false
-10-31 14:13:36.574  5853  5853 D PadCloser: clicked confirm 'OK': true
-10-31 14:13:36.975  5853  5853 D PadCloser: finished com.google.android.calendar (stage IDLE)
-10-31 14:13:37.792  5853  5853 D PadCloser: closing com.google.android.deskclock: opening App info
-10-31 14:13:39.628  5853  5853 D PadCloser: no Force stop yet: 3 windows, 8 nodes (event from com.ronanski.launcher)
-10-31 14:13:41.729  5853  5853 D PadCloser: found 'Force stop' enabled=true clickable=false
-10-31 14:13:41.731  5853  5853 D PadCloser: clicked Force stop: true
-10-31 14:13:42.254  5853  5853 D PadCloser: no confirm button yet
-10-31 14:13:42.307  5853  5853 D PadCloser: clicked confirm 'OK': true
-10-31 14:13:42.709  5853  5853 D PadCloser: finished com.google.android.deskclock (stage IDLE)
+10-31 14:24:48.291  5967  5967 D PadCloser: closing com.google.android.calendar: opening App info
+10-31 14:24:48.730  5967  5967 D PadCloser: no Force stop yet: 1 windows, 14 nodes (event from com.google.android.apps.nexuslauncher)
+10-31 14:24:48.777  5967  5967 D PadCloser: no Force stop yet: 1 windows, 14 nodes (event from com.google.android.apps.nexuslauncher)
+10-31 14:24:48.983  5967  5967 D PadCloser: no Force stop yet: 1 windows, 14 nodes (event from com.android.settings)
+10-31 14:24:50.833  5967  5967 D PadCloser: no Force stop yet: 2 windows, 14 nodes (event from com.android.settings)
+10-31 14:24:50.849  5967  5967 D PadCloser: found 'Force stop' enabled=true clickable=false
+10-31 14:24:50.851  5967  5967 D PadCloser: clicked Force stop: true
+10-31 14:24:51.124  5967  5967 D PadCloser: clicked confirm 'Force stop': false
+10-31 14:24:51.294  5967  5967 D PadCloser: clicked confirm 'OK': true
+10-31 14:24:51.701  5967  5967 D PadCloser: finished com.google.android.calendar (stage IDLE)
+10-31 14:24:52.360  5967  5967 D PadCloser: closing com.google.android.deskclock: opening App info
+10-31 14:24:54.275  5967  5967 D PadCloser: no Force stop yet: 3 windows, 35 nodes (event from com.google.android.apps.nexuslauncher)
+10-31 14:24:54.697  5967  5967 D PadCloser: no Force stop yet: 3 windows, 27 nodes (event from com.ronanski.launcher)
+10-31 14:24:57.412  5967  5967 D PadCloser: no Force stop yet: 3 windows, 27 nodes (event from com.ronanski.launcher)
+10-31 14:24:57.433  5967  5967 D PadCloser: found 'Force stop' enabled=true clickable=false
+10-31 14:24:57.455  5967  5967 D PadCloser: clicked Force stop: true
+10-31 14:24:57.671  5967  5967 D PadCloser: clicked confirm 'Force stop': false
+10-31 14:24:57.891  5967  5967 D PadCloser: clicked confirm 'OK': true
+10-31 14:24:58.291  5967  5967 D PadCloser: finished com.google.android.deskclock (stage IDLE)
