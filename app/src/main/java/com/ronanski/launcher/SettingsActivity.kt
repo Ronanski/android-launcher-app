@@ -68,6 +68,29 @@ private val LABEL_COLORS = listOf(
     0xFFFFFFFF, 0xFF000000, 0xFFBDBDBD, 0xFFFFC857, 0xFF7FD1FF, 0xFFFF8FAB, 0xFF9BE7A0, 0xFFC3A6FF,
 ).map { it.toInt() }
 
+private val ACCENT_COLORS = listOf(
+    0xFF4CC2FF, 0xFF0078D4, 0xFFB794F6, 0xFF6CCB5F, 0xFFFF9349, 0xFFFF7AB6, 0xFFFF6B6B, 0xFFFFC857,
+).map { it.toInt() }
+
+@Composable
+private fun ColorRow(colors: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        colors.forEach { c ->
+            Box(
+                Modifier
+                    .size(32.dp)
+                    .background(Color(c), CircleShape)
+                    .border(
+                        width = if (c == selected) 3.dp else 1.dp,
+                        color = if (c == selected) MaterialTheme.colorScheme.primary else Color.Gray,
+                        shape = CircleShape,
+                    )
+                    .clickable { onSelect(c) },
+            )
+        }
+    }
+}
+
 private enum class Dialog { ICON_PACK, ICON_SHAPE, FONT, SWIPE_UP, SWIPE_DOWN, DOUBLE_TAP }
 
 @Composable
@@ -135,16 +158,52 @@ private fun SettingsScreen(s: LauncherSettings, repo: AppRepository, updater: Up
         }
         item { SwitchRow("Check for updates automatically", s.autoUpdateCheck) { s.autoUpdateCheck = it } }
 
-        item { Section("Home screen") }
-        item { IntSlider("Home columns", s.homeColumns, 2..10) { s.homeColumns = it } }
-        item { SwitchRow("Show labels on home", s.showHomeLabels) { s.showHomeLabels = it } }
-        item { SwitchRow("Show clock", s.showClock) { s.showClock = it } }
+        item { Section("Desktop") }
+        item {
+            val cols = s.desktopColumns
+            Column(Modifier.padding(vertical = 4.dp)) {
+                Text("Desktop grid columns: ${if (cols == 0) "Auto" else cols.toString()}")
+                Slider(
+                    value = cols.toFloat(),
+                    onValueChange = { s.desktopColumns = it.roundToInt() },
+                    valueRange = 0f..16f,
+                    steps = 15,
+                )
+            }
+        }
+        item { SwitchRow("Show icon labels", s.showDesktopLabels) { s.showDesktopLabels = it } }
+        item { ClickRow("Sort desktop icons by name", "Widgets stay in place") { DesktopGrid.sortApps(s, repo) } }
+
+        item { Section("Taskbar") }
+        item { SwitchRow("Center taskbar icons (off = left, like Windows 10)", s.taskbarCentered) { s.taskbarCentered = it } }
+        item {
+            SwitchRow("Show recently used apps", s.showRecentApps) {
+                s.showRecentApps = it
+                if (it && !RecentApps.hasPermission(context)) {
+                    Actions.toast(context, "Allow \"Usage access\" for Pad Launcher")
+                    RecentApps.openSettings(context)
+                }
+                repo.refreshRecents()
+            }
+        }
+        item {
+            ClickRow(
+                "Usage access: ${if (RecentApps.hasPermission(context)) "allowed" else "not allowed"}",
+                "Needed to show recent apps on the taskbar",
+            ) { RecentApps.openSettings(context) }
+        }
         item { SwitchRow("24-hour clock", s.clock24h) { s.clock24h = it } }
 
-        item { Section("App drawer") }
-        item { IntSlider("Drawer columns", s.drawerColumns, 3..12) { s.drawerColumns = it } }
-        item { SwitchRow("Show labels in drawer", s.showDrawerLabels) { s.showDrawerLabels = it } }
-        item { IntSlider("Background opacity %", s.drawerOpacity, 0..100) { s.drawerOpacity = it } }
+        item { Section("Start menu & panels") }
+        item { IntSlider("Pinned apps per row", s.startColumns, 3..10) { s.startColumns = it } }
+        item { IntSlider("Panel opacity %", s.panelOpacity, 30..100) { s.panelOpacity = it } }
+        item {
+            Column(Modifier.padding(vertical = 8.dp)) {
+                Text("Accent color")
+                Spacer(Modifier.height(8.dp))
+                ColorRow(ACCENT_COLORS, s.accentColor) { s.accentColor = it }
+            }
+        }
 
         item { Section("Icons") }
         item {
@@ -169,27 +228,13 @@ private fun SettingsScreen(s: LauncherSettings, repo: AppRepository, updater: Up
         item { SwitchRow("Label shadow", s.labelShadow) { s.labelShadow = it } }
         item {
             Column(Modifier.padding(vertical = 8.dp)) {
-                Text("Label & clock color")
+                Text("Desktop label color")
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    LABEL_COLORS.forEach { c ->
-                        Box(
-                            Modifier
-                                .size(32.dp)
-                                .background(Color(c), CircleShape)
-                                .border(
-                                    width = if (c == s.labelColor) 3.dp else 1.dp,
-                                    color = if (c == s.labelColor) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    shape = CircleShape,
-                                )
-                                .clickable { s.labelColor = c },
-                        )
-                    }
-                }
+                ColorRow(LABEL_COLORS, s.labelColor) { s.labelColor = it }
             }
         }
 
-        item { Section("Gestures (home screen)") }
+        item { Section("Gestures (empty desktop)") }
         item { ClickRow("Swipe up", GestureAction.from(s.gestureSwipeUp).label) { dialog = Dialog.SWIPE_UP } }
         item { ClickRow("Swipe down", GestureAction.from(s.gestureSwipeDown).label) { dialog = Dialog.SWIPE_DOWN } }
         item { ClickRow("Double tap", GestureAction.from(s.gestureDoubleTap).label) { dialog = Dialog.DOUBLE_TAP } }
@@ -197,7 +242,7 @@ private fun SettingsScreen(s: LauncherSettings, repo: AppRepository, updater: Up
         item { Section("Hidden apps") }
         val hiddenApps = repo.apps.filter { it.key in s.hidden }
         if (hiddenApps.isEmpty()) {
-            item { Text("No hidden apps. Long-press an app → Hide from drawer.", color = Color.Gray) }
+            item { Text("No hidden apps. In Start → All apps, long-press an app → Hide.", color = Color.Gray) }
         }
         items(hiddenApps, key = { it.key }) { app ->
             ClickRow(repo.label(app), "Tap to unhide") { s.toggleHidden(app.key) }

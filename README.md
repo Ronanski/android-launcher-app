@@ -4,33 +4,43 @@ Simple at customizable na Android launcher. Ginawa para sa Xiaomi Pad 5, pero ga
 
 ## Features
 
-**Home screen**
-- Orasan at petsa (pwedeng 12h o 24h, i-tap para buksan ang alarms)
-- Grid ng mga paborito mong app; ikaw ang pipili ng bilang ng columns
-- Long-press sa bakanteng space para buksan ang Settings, palitan ang wallpaper, o makita lahat ng apps
+Windows-style na launcher para sa Android tablets (at phones).
 
-**App drawer** (swipe up)
-- Search bar. Pindutin ang Enter para buksan agad ang unang result
-- Pwedeng i-adjust ang columns at background opacity
-- I-swipe pababa o pindutin ang Back para isara
+**Desktop**
+- Pwedeng ilagay kahit saan sa grid ang mga app icon at widget
+- **Long-press + drag** para ilipat; **long-press + bitaw** para sa menu
+- Long-press sa bakanteng desktop: *Add widget*, *Sort icons by name*, *Change wallpaper*, *Personalize*
 
-**Long-press sa app**
-- App shortcuts (hal. "New tab" sa Chrome). Kailangan default launcher ka para lumabas ito
-- Add/Remove sa home, Move left/right
-- **Open in split screen**
-- Rename, Hide, App info, Uninstall
+**Widgets**
+- Magdagdag ng kahit anong Android widget
+- I-drag para ilipat; long-press → *Resize*, tapos hilahin ang bilog sa kanto; long-press → *Remove widget*
+
+**Taskbar**
+- Start button, Search, naka-pin na apps, at recent apps (opsyonal, kailangan ng "Usage access")
+- System tray: baterya (tap para sa quick settings), orasan at petsa (tap para sa notifications)
+- Pwedeng nasa gitna (Windows 11) o nasa kaliwa (Windows 10)
+
+**Start menu**
+- Search, Pinned apps, All apps (A–Z)
+- Settings, Lock, Power options
+
+**Menu ng app** (long-press)
+- Pin to Start, Pin to taskbar, Add to desktop, Rename, Hide
+- App shortcuts, Open in split screen, App info, Uninstall
 
 **Customization**
-- Icon packs: kahit anong Nova/ADW-compatible na icon pack mula sa Play Store
-- Icon shape: original, circle, squircle, rounded, square, teardrop
-- Icon size, label size, label color, label shadow
-- Fonts: built-in na Light / Thin / Condensed / Serif / Mono / Casual / Cursive, **o sarili mong .ttf/.otf file**
+- Accent color, panel opacity, laki ng desktop grid
+- Icon packs (Nova/ADW), icon shapes, icon size
+- Fonts (built-in o sariling .ttf/.otf), kulay at laki ng labels
 
-**Gestures** (pwedeng palitan sa Settings)
-- Swipe up: app drawer
+**Gestures sa bakanteng desktop** (pwedeng palitan)
+- Swipe up: Start menu
 - Swipe down: notifications
 - Double tap: lock screen
-- Iba pang pagpipilian: quick settings, recent apps, toggle split screen, launcher settings
+
+## Screenshots
+
+Makikita sa [`docs/screenshots/`](docs/screenshots). Awtomatiko itong ginagawa ng *Screenshots* workflow sa isang Android tablet emulator.
 
 ## Paano i-install
 

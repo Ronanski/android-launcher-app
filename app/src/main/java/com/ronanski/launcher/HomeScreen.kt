@@ -1,7 +1,7 @@
 package com.ronanski.launcher
 
+import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
-import android.provider.AlarmClock
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,20 +9,15 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -30,147 +25,121 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
-fun HomeScreen(settings: LauncherSettings, repo: AppRepository, drawerOpen: MutableState<Boolean>) {
+fun HomeScreen(
+    settings: LauncherSettings,
+    repo: AppRepository,
+    widgets: WidgetManager,
+    startOpen: MutableState<Boolean>,
+    searchFocus: MutableState<Boolean>,
+    widgetPicker: MutableState<Boolean>,
+    onAddWidget: (AppWidgetProviderInfo) -> Unit,
+) {
     val context = LocalContext.current
     val font = rememberLauncherFont(settings)
-    val apps = repo.apps
-    val byKey = remember(apps) { apps.associateBy { it.key } }
-    val pinned = settings.pinned.mapNotNull { byKey[it] }
-    var homeMenu by remember { mutableStateOf(false) }
+    var desktopMenu by remember { mutableStateOf(false) }
     var menuAt by remember { mutableStateOf(Offset.Zero) }
     var renameTarget by remember { mutableStateOf<AppInfo?>(null) }
-    val swipeThreshold = with(LocalDensity.current) { 56.dp.toPx() }
 
-    fun run(actionName: String) =
-        Actions.perform(context, GestureAction.from(actionName)) { drawerOpen.value = true }
+    fun openStart(search: Boolean) {
+        searchFocus.value = search
+        startOpen.value = true
+    }
+
+    fun run(actionName: String) = Actions.perform(context, GestureAction.from(actionName)) { openStart(false) }
 
     Box(Modifier.fillMaxSize()) {
-        // ---- Home layer (wallpaper shows through) ----
-        Box(
-            Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = { run(settings.gestureDoubleTap) },
-                        onLongPress = {
-                            menuAt = it
-                            homeMenu = true
-                        },
-                    )
-                }
-                .pointerInput(Unit) {
-                    var total = 0f
-                    detectVerticalDragGestures(
-                        onDragStart = { total = 0f },
-                        onDragEnd = {
-                            when {
-                                total < -swipeThreshold -> run(settings.gestureSwipeUp)
-                                total > swipeThreshold -> run(settings.gestureSwipeDown)
-                            }
-                        },
-                        onVerticalDrag = { change, dy ->
-                            change.consume()
-                            total += dy
-                        },
-                    )
-                },
-        ) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp),
-            ) {
-                if (settings.showClock) Clock(settings, font)
-                UpdateBanner(context.launcherApp.updater, font)
-                Spacer(Modifier.weight(1f))
-                if (pinned.isEmpty()) {
-                    Text(
-                        "Swipe up to see all apps.\nLong-press an app → Add to home.\nLong-press empty space → Settings.",
-                        color = Color.White.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Center,
-                        fontFamily = font,
-                        style = labelStyle(settings),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                } else {
-                    val columns = settings.homeColumns.coerceAtLeast(1)
-                    pinned.chunked(columns).forEach { row ->
-                        Row(Modifier.fillMaxWidth()) {
-                            row.forEach { app ->
-                                key(app.key) {
-                                    AppIcon(
-                                        app, repo, settings, settings.showHomeLabels, font,
-                                        onRename = { renameTarget = it },
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                }
-                            }
-                            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f).fillMaxWidth().statusBarsPadding()) {
+                Desktop(
+                    settings = settings,
+                    repo = repo,
+                    widgets = widgets,
+                    font = font,
+                    onRename = { renameTarget = it },
+                    onBackgroundLongPress = {
+                        menuAt = it
+                        desktopMenu = true
+                    },
+                    onGesture = { run(it) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+                UpdateBanner(context.launcherApp.updater, font, Modifier.align(Alignment.TopEnd))
+
+                Box(Modifier.offset { IntOffset(menuAt.x.roundToInt(), menuAt.y.roundToInt()) }) {
+                    DropdownMenu(expanded = desktopMenu, onDismissRequest = { desktopMenu = false }) {
+                        val item: @Composable (String, () -> Unit) -> Unit = { text, action ->
+                            DropdownMenuItem(text = { Text(text) }, onClick = {
+                                desktopMenu = false
+                                action()
+                            })
                         }
+                        item("Add widget") { widgetPicker.value = true }
+                        item("Sort icons by name") { DesktopGrid.sortApps(settings, repo) }
+                        item("Change wallpaper") {
+                            try {
+                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), "Wallpaper"))
+                            } catch (e: Exception) {
+                            }
+                        }
+                        item("Personalize") { Actions.perform(context, GestureAction.LAUNCHER_SETTINGS) {} }
                     }
                 }
-                Spacer(Modifier.height(24.dp))
-            }
 
-            Box(Modifier.offset { IntOffset(menuAt.x.roundToInt(), menuAt.y.roundToInt()) }) {
-                DropdownMenu(expanded = homeMenu, onDismissRequest = { homeMenu = false }) {
-                    DropdownMenuItem(text = { Text("Launcher settings") }, onClick = {
-                        homeMenu = false
-                        Actions.perform(context, GestureAction.LAUNCHER_SETTINGS) {}
-                    })
-                    DropdownMenuItem(text = { Text("Change wallpaper") }, onClick = {
-                        homeMenu = false
-                        try {
-                            context.startActivity(
-                                Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), "Wallpaper"),
-                            )
-                        } catch (e: Exception) {
-                        }
-                    })
-                    DropdownMenuItem(text = { Text("All apps") }, onClick = {
-                        homeMenu = false
-                        drawerOpen.value = true
-                    })
+                AnimatedVisibility(
+                    visible = startOpen.value,
+                    enter = slideInVertically { it / 6 } + fadeIn(),
+                    exit = slideOutVertically { it / 6 } + fadeOut(),
+                ) {
+                    StartMenu(
+                        settings = settings,
+                        repo = repo,
+                        font = font,
+                        focusSearch = searchFocus.value,
+                        onClose = { startOpen.value = false },
+                        onRename = { renameTarget = it },
+                    )
                 }
             }
+            Taskbar(
+                settings = settings,
+                repo = repo,
+                font = font,
+                startOpen = startOpen.value,
+                onStartClick = {
+                    if (startOpen.value) startOpen.value = false else openStart(false)
+                },
+                onSearchClick = { openStart(true) },
+                onRename = { renameTarget = it },
+                onAppLaunched = { startOpen.value = false },
+            )
         }
 
-        // ---- App drawer layer ----
-        AnimatedVisibility(
-            visible = drawerOpen.value,
-            enter = slideInVertically { it / 3 } + fadeIn(),
-            exit = slideOutVertically { it / 3 } + fadeOut(),
-        ) {
-            AppDrawer(settings, repo, font, onClose = { drawerOpen.value = false }, onRename = { renameTarget = it })
+        if (widgetPicker.value) {
+            WidgetPicker(
+                widgets = widgets,
+                onPick = {
+                    widgetPicker.value = false
+                    onAddWidget(it)
+                },
+                onClose = { widgetPicker.value = false },
+            )
         }
     }
 
@@ -197,7 +166,7 @@ fun HomeScreen(settings: LauncherSettings, repo: AppRepository, drawerOpen: Muta
 }
 
 @Composable
-private fun UpdateBanner(updater: Updater, font: FontFamily) {
+private fun UpdateBanner(updater: Updater, font: FontFamily, modifier: Modifier = Modifier) {
     val info = updater.available ?: return
     val progress = updater.progress
     Text(
@@ -208,47 +177,11 @@ private fun UpdateBanner(updater: Updater, font: FontFamily) {
         },
         color = Color.White,
         fontFamily = font,
-        modifier = Modifier
-            .padding(top = 16.dp)
-            .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
+        modifier = modifier
+            .padding(12.dp)
+            .widthIn(max = 360.dp)
+            .background(Color(0xE61F1F1F), RoundedCornerShape(8.dp))
             .clickable { updater.downloadAndInstall() }
             .padding(horizontal = 16.dp, vertical = 12.dp),
     )
-}
-
-@Composable
-private fun Clock(settings: LauncherSettings, font: FontFamily) {
-    val context = LocalContext.current
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            now = System.currentTimeMillis()
-            delay(60_000 - now % 60_000 + 50)
-        }
-    }
-    val is24h = settings.clock24h
-    val timeFormat = remember(is24h) { SimpleDateFormat(if (is24h) "HH:mm" else "h:mm", Locale.getDefault()) }
-    val dateFormat = remember { SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()) }
-    val color = Color(settings.labelColor)
-    Column(
-        Modifier
-            .padding(top = 32.dp)
-            .clickable {
-                try {
-                    context.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS))
-                } catch (e: Exception) {
-                }
-            },
-    ) {
-        Text(
-            timeFormat.format(Date(now)),
-            color = color, fontSize = 72.sp, fontFamily = font, fontWeight = FontWeight.Light,
-            style = labelStyle(settings),
-        )
-        Text(
-            dateFormat.format(Date(now)),
-            color = color, fontSize = 18.sp, fontFamily = font, style = labelStyle(settings),
-        )
-    }
 }

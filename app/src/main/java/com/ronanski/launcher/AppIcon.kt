@@ -1,14 +1,7 @@
 package com.ronanski.launcher
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,11 +11,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -31,16 +21,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Dp
 
 val ICON_SHAPES = listOf(
     "original" to "Original (system)",
@@ -61,89 +45,60 @@ fun iconShape(key: String): Shape = when (key) {
 
 fun labelStyle(settings: LauncherSettings): TextStyle =
     if (settings.labelShadow) {
-        TextStyle(shadow = Shadow(Color.Black.copy(alpha = 0.7f), Offset(0f, 2f), 6f))
+        TextStyle(shadow = Shadow(Color.Black.copy(alpha = 0.8f), Offset(0f, 2f), 6f))
     } else {
         TextStyle.Default
     }
 
-@OptIn(ExperimentalFoundationApi::class)
+/** The app's icon (icon pack + shape applied), loaded in the background. */
 @Composable
-fun AppIcon(
+fun AppIconImage(
     app: AppInfo,
     repo: AppRepository,
     settings: LauncherSettings,
-    showLabel: Boolean,
-    font: FontFamily,
-    onRename: (AppInfo) -> Unit,
+    size: Dp,
     modifier: Modifier = Modifier,
-    onLaunched: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-    val haptics = LocalHapticFeedback.current
-    val sizeDp = settings.iconSize
-    val sizePx = with(LocalDensity.current) { sizeDp.dp.roundToPx() }
+    val sizePx = with(LocalDensity.current) { size.roundToPx() }
     val shapeKey = settings.iconShape
     val pack = settings.iconPack
     val icon by produceState<ImageBitmap?>(null, app.key, pack, shapeKey, sizePx) {
         value = repo.icon(app, sizePx, pack, fullBleed = shapeKey != "original")
     }
-    var menuOpen by remember { mutableStateOf(false) }
-    val label = repo.label(app)
-
-    Box(modifier) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .combinedClickable(
-                    onClick = {
-                        AppLaunch.open(context, app)
-                        onLaunched()
-                    },
-                    onLongClick = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        menuOpen = true
-                    },
-                )
-                .padding(vertical = 8.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            val bitmap = icon
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = label,
-                    modifier = Modifier.size(sizeDp.dp).clip(iconShape(shapeKey)),
-                )
-            } else {
-                Spacer(Modifier.size(sizeDp.dp))
-            }
-            if (showLabel) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = label,
-                    color = Color(settings.labelColor),
-                    fontSize = settings.labelSize.sp,
-                    fontFamily = font,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    style = labelStyle(settings),
-                )
-            }
-        }
-        AppMenu(menuOpen, { menuOpen = false }, app, settings, onRename, onLaunched)
+    val bitmap = icon
+    if (bitmap != null) {
+        Image(bitmap = bitmap, contentDescription = null, modifier = modifier.size(size).clip(iconShape(shapeKey)))
+    } else {
+        Spacer(modifier.size(size))
     }
 }
 
-@Composable
-private fun AppMenu(
-    expanded: Boolean,
-    onDismiss: () -> Unit,
+class MenuEntry(val label: String, val action: () -> Unit)
+
+/** Standard Pin to Start / Pin to taskbar / desktop / rename entries. */
+fun pinEntries(
+    context: android.content.Context,
     app: AppInfo,
     settings: LauncherSettings,
     onRename: (AppInfo) -> Unit,
-    onLaunched: () -> Unit,
+    includeDesktop: Boolean = true,
+): List<MenuEntry> = buildList {
+    add(MenuEntry(if (app.key in settings.startPinned) "Unpin from Start" else "Pin to Start") { settings.toggleStart(app.key) })
+    add(MenuEntry(if (app.key in settings.taskbarPinned) "Unpin from taskbar" else "Pin to taskbar") { settings.toggleTaskbar(app.key) })
+    if (includeDesktop && !settings.isOnDesktop(app.key)) {
+        add(MenuEntry("Add to desktop") { DesktopGrid.addApp(context, settings, app.key) })
+    }
+    add(MenuEntry("Rename") { onRename(app) })
+}
+
+/** Right-click style menu: app shortcuts, caller's entries, then split screen / info / uninstall. */
+@Composable
+fun AppContextMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    app: AppInfo,
+    entries: List<MenuEntry>,
+    onLaunched: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val shortcuts = remember(expanded, app.key) {
@@ -159,7 +114,6 @@ private fun AppMenu(
                 },
             )
         }
-
         shortcuts.forEach { shortcut ->
             item(shortcut.shortLabel?.toString() ?: shortcut.id) {
                 AppLaunch.startShortcut(context, shortcut)
@@ -167,20 +121,11 @@ private fun AppMenu(
             }
         }
         if (shortcuts.isNotEmpty()) HorizontalDivider()
-
-        val pinned = app.key in settings.pinned
-        item(if (pinned) "Remove from home" else "Add to home") { settings.togglePin(app.key) }
-        if (pinned) {
-            item("Move left") { settings.movePinned(app.key, -1) }
-            item("Move right") { settings.movePinned(app.key, 1) }
-        }
+        entries.forEach { entry -> item(entry.label, entry.action) }
+        if (entries.isNotEmpty()) HorizontalDivider()
         item("Open in split screen") {
             AppLaunch.openSplit(context, app)
             onLaunched()
-        }
-        item("Rename") { onRename(app) }
-        item(if (app.key in settings.hidden) "Unhide" else "Hide from drawer") {
-            settings.toggleHidden(app.key)
         }
         item("App info") { AppLaunch.appInfo(context, app) }
         item("Uninstall") { AppLaunch.uninstall(context, app) }

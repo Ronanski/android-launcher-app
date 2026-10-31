@@ -10,12 +10,13 @@ import android.widget.Toast
 
 enum class GestureAction(val label: String) {
     NONE("Do nothing"),
-    APP_DRAWER("Open app drawer"),
+    APP_DRAWER("Open Start menu"),
     NOTIFICATIONS("Notification panel"),
     QUICK_SETTINGS("Quick settings"),
     LOCK_SCREEN("Lock screen (accessibility)"),
     RECENTS("Recent apps (accessibility)"),
     SPLIT_SCREEN("Toggle split screen (accessibility)"),
+    POWER_MENU("Power menu (accessibility)"),
     LAUNCHER_SETTINGS("Launcher settings");
 
     companion object {
@@ -46,6 +47,8 @@ object Actions {
                 needsService(context) { global(AccessibilityService.GLOBAL_ACTION_RECENTS) }
             GestureAction.SPLIT_SCREEN ->
                 needsService(context) { global(AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN) }
+            GestureAction.POWER_MENU ->
+                needsService(context) { global(AccessibilityService.GLOBAL_ACTION_POWER_DIALOG) }
             GestureAction.LAUNCHER_SETTINGS ->
                 context.startActivity(
                     Intent(context, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),

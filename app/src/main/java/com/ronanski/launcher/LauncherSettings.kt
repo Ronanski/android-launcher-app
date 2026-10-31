@@ -74,20 +74,31 @@ class LauncherSettings(context: Context) {
         { k, v -> putString(k, JSONObject(v).toString()) },
     )
 
-    // ---- Layout ----
-    var homeColumns by intPref("home_columns", 5)
-    var drawerColumns by intPref("drawer_columns", 6)
-    var iconSize by intPref("icon_size", 56)
+    private fun desktopPref(key: String) = Pref<List<DesktopItem>>(
+        key,
+        { DesktopItem.parseList(getString(key, null)) },
+        { k, v -> putString(k, DesktopItem.toJson(v)) },
+    )
+
+    // ---- Desktop ----
+    var desktop by desktopPref("desktop")
+    /** 0 = automatic (based on screen width). */
+    var desktopColumns by intPref("desktop_columns", 0)
+    var showDesktopLabels by boolPref("desktop_labels", true)
+    var iconSize by intPref("icon_size", 52)
     var labelSize by intPref("label_size", 12)
-    var showHomeLabels by boolPref("home_labels", true)
-    var showDrawerLabels by boolPref("drawer_labels", true)
     var labelShadow by boolPref("label_shadow", true)
     var labelColor by intPref("label_color", 0xFFFFFFFF.toInt())
-    var drawerOpacity by intPref("drawer_opacity", 85)
 
-    // ---- Clock ----
-    var showClock by boolPref("show_clock", true)
+    // ---- Taskbar & Start ----
+    var taskbarPinned by listPref("taskbar_pinned")
+    var startPinned by listPref("start_pinned")
+    var taskbarCentered by boolPref("taskbar_centered", true)
+    var showRecentApps by boolPref("taskbar_recents", false)
     var clock24h by boolPref("clock_24h", false)
+    var startColumns by intPref("start_columns", 6)
+    var panelOpacity by intPref("panel_opacity", 88)
+    var accentColor by intPref("accent_color", 0xFF4CC2FF.toInt())
 
     // ---- Look ----
     var font by stringPref("font", "default")
@@ -105,30 +116,54 @@ class LauncherSettings(context: Context) {
     var lastUpdateCheck by longPref("last_update_check", 0L)
 
     // ---- Apps ----
-    var pinned by listPref("pinned")
+    /** Home apps from v0.1/v0.2; migrated to the desktop, Start and taskbar. */
+    private var pinned by listPref("pinned")
     var hidden by setPref("hidden")
     var renames by mapPref("renames")
 
-    fun togglePin(key: String) {
-        pinned = if (key in pinned) pinned - key else pinned + key
+    init {
+        if (!prefs.contains("desktop") && pinned.isNotEmpty()) {
+            desktop = pinned.mapIndexed { i, key -> DesktopItem(DesktopItem.APP, key, i / 5, i % 5) }
+            if (taskbarPinned.isEmpty()) taskbarPinned = pinned.take(6)
+            if (startPinned.isEmpty()) startPinned = pinned
+        }
     }
 
-    fun movePinned(key: String, delta: Int) {
-        val list = pinned.toMutableList()
+    private fun toggled(list: List<String>, key: String) = if (key in list) list - key else list + key
+
+    fun toggleTaskbar(key: String) {
+        taskbarPinned = toggled(taskbarPinned, key)
+    }
+
+    fun toggleStart(key: String) {
+        startPinned = toggled(startPinned, key)
+    }
+
+    fun moveInTaskbar(key: String, delta: Int) {
+        val list = taskbarPinned.toMutableList()
         val from = list.indexOf(key)
         val to = from + delta
         if (from < 0 || to !in list.indices) return
         Collections.swap(list, from, to)
-        pinned = list
+        taskbarPinned = list
     }
 
     fun toggleHidden(key: String) {
-        if (key in hidden) {
-            hidden = hidden - key
-        } else {
-            hidden = hidden + key
-            pinned = pinned - key
-        }
+        hidden = if (key in hidden) hidden - key else hidden + key
+    }
+
+    fun isOnDesktop(appKey: String) = desktop.any { !it.isWidget && it.key == appKey }
+
+    fun addToDesktop(item: DesktopItem) {
+        desktop = desktop + item
+    }
+
+    fun updateDesktop(id: String, transform: (DesktopItem) -> DesktopItem) {
+        desktop = desktop.map { if (it.id == id) transform(it) else it }
+    }
+
+    fun removeFromDesktop(id: String) {
+        desktop = desktop.filterNot { it.id == id }
     }
 
     fun rename(key: String, name: String?) {

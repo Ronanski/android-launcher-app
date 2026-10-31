@@ -56,42 +56,61 @@ go_home() {
 }
 
 adb shell cmd package set-home-activity "$PKG/.MainActivity"
+adb shell appwidget grantbind --package "$PKG" --user 0 || true
 
-# 1) Default look
+# Status bar height in px (24dp at the emulator density) — desktop coordinates start below it.
+DENSITY=$(adb shell wm density | tr -d '\r' | awk '/Physical density/ {print $3}')
+DP=$((DENSITY / 160))
+SB=$((24 * DP))
+
+# 1) Windows-style desktop + taskbar
 write_prefs ""
 go_home
-shot 01-home 6
+shot 01-desktop 6
 
-# 2) App drawer (swipe up)
-adb shell input swipe "$CX" $((H * 3 / 4)) "$CX" $((H / 4)) 250
-shot 02-drawer
-
-# 3) Long-press menu on the first drawer app
-go_home
-sleep 2
-adb shell input swipe "$CX" $((H * 3 / 4)) "$CX" $((H / 4)) 250
-sleep 2
-adb shell input swipe $((W / 12)) $((H / 5)) $((W / 12)) $((H / 5)) 900
-shot 03-app-menu
+# 2) Start menu (swipe up on empty desktop)
+adb shell input swipe $((W * 6 / 10)) $((H / 2)) $((W * 6 / 10)) $((H / 5)) 250
+shot 02-start
 adb shell input keyevent KEYCODE_BACK
 
-# 4) Settings (swipe down is mapped to Launcher settings for this capture)
+# 3) Long-press a desktop icon -> context menu
 go_home
 sleep 2
-adb shell input swipe "$CX" $((H / 3)) "$CX" $((H * 3 / 4)) 250
-shot 04-settings
-adb shell input swipe "$CX" $((H * 3 / 4)) "$CX" $((H / 6)) 400
-shot 05-settings-more
+CELL=$((W / ((W / DP) / 104)))
+adb shell input swipe $((CELL / 2)) $((SB + CELL / 2)) $((CELL / 2)) $((SB + CELL / 2)) 1000
+shot 03-icon-menu
 adb shell input keyevent KEYCODE_BACK
 
-# 5) Customized look: circle icons, serif font, gold labels, bigger icons
+# 4) Long-press empty desktop -> "Add widget" -> widget picker
+go_home
+sleep 2
+MX=$((W * 6 / 10))
+MY=$((H * 4 / 10))
+adb shell input swipe "$MX" "$MY" "$MX" "$MY" 1000
+sleep 2
+adb shell input tap $((MX + 50 * DP)) $((MY + 32 * DP))
+shot 04-widget-picker 4
+
+# 5) Pick the first widget
+adb shell input tap $((115 * DP)) $((SB + 230 * DP))
+shot 05-desktop-widget 6
+go_home
+
+# 6) Settings (swipe down on empty desktop is mapped to Launcher settings for this capture)
+sleep 2
+adb shell input swipe $((W * 6 / 10)) $((H / 3)) $((W * 6 / 10)) $((H * 2 / 3)) 250
+shot 06-settings
+adb shell input keyevent KEYCODE_BACK
+
+# 7) Personalized: left taskbar (Windows 10 style), purple accent, circle icons, serif font
 write_prefs '    <string name="icon_shape">circle</string>
     <string name="font">serif</string>
-    <int name="label_color" value="-14249" />
-    <int name="icon_size" value="72" />
-    <int name="home_columns" value="5" />
+    <int name="accent_color" value="-4745994" />
+    <boolean name="taskbar_centered" value="false" />
     <boolean name="clock_24h" value="true" />'
 go_home
-shot 06-home-custom 6
+sleep 4
+adb shell input swipe $((W * 6 / 10)) $((H / 2)) $((W * 6 / 10)) $((H / 5)) 250
+shot 07-personalized-start
 
 ls -la "$OUT"

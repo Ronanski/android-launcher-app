@@ -47,6 +47,10 @@ class AppRepository(private val context: Context, private val settings: Launcher
     var apps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
 
+    /** Keys of recently used apps (taskbar), most recent first. */
+    var recentKeys by mutableStateOf<List<String>>(emptyList())
+        private set
+
     private val callback = object : LauncherApps.Callback() {
         override fun onPackageRemoved(packageName: String?, user: UserHandle?) = refresh()
         override fun onPackageAdded(packageName: String?, user: UserHandle?) = refresh()
@@ -90,6 +94,26 @@ class AppRepository(private val context: Context, private val settings: Launcher
         }
             .filter { it.component.packageName != context.packageName }
             .sortedWith(compareBy(collator) { it.label })
+    }
+
+    fun refreshRecents() {
+        if (!settings.showRecentApps || !RecentApps.hasPermission(context)) {
+            recentKeys = emptyList()
+            return
+        }
+        scope.launch {
+            val packages = withContext(Dispatchers.IO) {
+                try {
+                    RecentApps.recentPackages(context)
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            }
+            val me = android.os.Process.myUserHandle()
+            recentKeys = packages.mapNotNull { pkg ->
+                apps.firstOrNull { it.component.packageName == pkg && it.user == me }?.key
+            }
+        }
     }
 
     /** Label after applying the user's rename, if any. */
