@@ -533,6 +533,12 @@ fun TaskView(settings: LauncherSettings, repo: AppRepository, font: FontFamily, 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Recent apps", color = Ui.text, fontSize = 22.sp, fontFamily = font, modifier = Modifier.weight(1f))
                 if (recent.isNotEmpty()) {
+                    SmallButton("Close all", font) {
+                        repo.closeRecent(recent.map { it.key })
+                        AppCloser.close(context, recent.map { it.component.packageName })
+                        onClose()
+                    }
+                    Spacer(Modifier.width(8.dp))
                     SmallButton("Clear list", font) { repo.closeRecent(recent.map { it.key }) }
                     Spacer(Modifier.width(8.dp))
                 }
@@ -560,7 +566,10 @@ fun TaskView(settings: LauncherSettings, repo: AppRepository, font: FontFamily, 
                     items(recent, key = { it.key }) { app ->
                         TaskCard(
                             app, repo, settings, font, repo.recentTimes[app.key] ?: 0L,
-                            onClose = { repo.closeRecent(listOf(app.key)) },
+                            onClose = {
+                                repo.closeRecent(listOf(app.key))
+                                AppCloser.close(context, listOf(app.component.packageName))
+                            },
                         ) {
                             AppLaunch.open(context, app)
                             onClose()

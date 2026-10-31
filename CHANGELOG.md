@@ -2,6 +2,15 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.8.0 — 2026-10-31
+
+- **Totoong pagsasara ng app**, gaya ng "End task" sa Windows:
+  - Long-press ang bukas na app sa taskbar → *Close app*
+  - Sa Task View: ✕ sa bawat app, o *Close all*
+
+  Binubuksan ng accessibility service ang App info ng app, pinipindot ang *Force stop* at *OK*, tapos bumabalik sa dati mong screen. Mabilis na makikita sandali ang App info page habang isinasara. Babasahin lang ng service ang screen habang may isinasarang app. Tandaan: mawawala ang hindi pa naka-save sa app, gaya ng End task.
+- Pagkatapos mag-update, i-off tapos i-on ulit ang Pad Launcher sa Accessibility para gumana ang bagong pagsasara.
+
 ## 0.7.2 — 2026-10-31
 
 - Nasa ibabaw na ng navigation bar (ang 3 button ng Xiaomi) ang overlay taskbar, at hindi na nito tinatakpan ang mga iyon.

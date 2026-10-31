@@ -150,6 +150,31 @@ adb shell input tap $((W - 210 * DP)) $((50 * DP))
 shot 11-task-view-cleared
 adb shell input keyevent KEYCODE_BACK
 
+# 11b) Task View -> Close all: really closes the apps (force stop through the accessibility service)
+adb shell settings put secure enabled_accessibility_services "$PKG/$PKG.LauncherAccessibilityService"
+adb shell settings put secure accessibility_enabled 1
+for pkg in com.google.android.deskclock com.google.android.calendar; do
+  adb shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+  sleep 3
+done
+go_home
+sleep 3
+adb shell input tap $((258 * DP)) "$TBY"
+sleep 2
+shot 11b-task-view-before-close 1
+adb shell input tap $((W - 294 * DP)) $((50 * DP))
+sleep 14
+{
+  for pkg in com.google.android.deskclock com.google.android.calendar; do
+    if adb shell pidof "$pkg" >/dev/null 2>&1; then echo "$pkg: STILL RUNNING"; else echo "$pkg: closed"; fi
+  done
+} > "$OUT/close-test.txt"
+cat "$OUT/close-test.txt"
+shot 11c-after-close-all 1
+adb shell settings delete secure enabled_accessibility_services || true
+adb shell settings put secure accessibility_enabled 0
+go_home
+
 # 12) Quick settings -> Edit
 sleep 1
 adb shell input tap $((W - 175 * DP)) "$TBY"

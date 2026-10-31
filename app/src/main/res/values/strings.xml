@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Pad Launcher</string>
     <string name="settings_title">Launcher settings</string>
-    <string name="accessibility_description">Lets Pad Launcher run gesture actions: lock screen (double tap), recent apps, split screen, notifications and quick settings. It does not read your screen content.</string>
+    <string name="accessibility_description">Lets Pad Launcher run gesture actions (lock screen, recents, split screen, notifications, quick settings), show the taskbar over apps, and close apps for you. It only reads the screen while closing an app you chose — to find and press \"Force stop\" in that app\'s App info page.</string>
 </resources>

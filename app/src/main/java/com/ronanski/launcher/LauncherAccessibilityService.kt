@@ -6,8 +6,9 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.compose.runtime.mutableStateOf
 
 /**
- * Only used to run "global actions" (lock screen, recents, split screen...).
- * It never reads window content.
+ * Runs global actions (lock screen, recents, split screen...), hosts the overlay taskbar and
+ * navigation gestures, and closes apps on request. It only reads window content while
+ * AppCloser is closing an app the user picked.
  */
 class LauncherAccessibilityService : AccessibilityService() {
 
@@ -46,7 +47,13 @@ class LauncherAccessibilityService : AccessibilityService() {
         refreshOverlay()
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        // Only acts while closing an app the user chose (see AppCloser).
+        try {
+            AppCloser.onEvent(this, event)
+        } catch (e: Exception) {
+        }
+    }
 
     override fun onInterrupt() {}
 
