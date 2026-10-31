@@ -81,6 +81,13 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
         }
     }
 
+    /** Hidden while the screen is locked so Start can't be opened on the lock screen. */
+    fun setVisible(visible: Boolean) {
+        val r = root ?: return
+        if (!visible) panel.value = Panel.NONE
+        r.visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
+    }
+
     fun hide() {
         root?.let {
             try {
@@ -167,7 +174,7 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
                             when (current) {
                                 Panel.START, Panel.SEARCH -> StartMenu(
                                     settings = settings, repo = repo, font = font,
-                                    focusSearch = current == Panel.SEARCH, onClose = close, onRename = { },
+                                    focusSearch = current == Panel.SEARCH, onClose = close, onRename = null,
                                 )
                                 Panel.CALENDAR -> CalendarFlyout(settings, font, close)
                                 Panel.QUICK -> QuickSettingsFlyout(settings, font, close)
@@ -189,7 +196,7 @@ class OverlayTaskbar(private val service: AccessibilityService) : LifecycleOwner
                                 panel.value = p
                             }
                         },
-                        onRename = { },
+                        onRename = null,
                         inOverlay = true,
                     )
                 }

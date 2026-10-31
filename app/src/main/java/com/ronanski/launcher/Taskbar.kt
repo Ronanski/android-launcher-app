@@ -91,7 +91,7 @@ fun Taskbar(
     font: FontFamily,
     panel: Panel,
     onPanel: (Panel) -> Unit,
-    onRename: (AppInfo) -> Unit,
+    onRename: ((AppInfo) -> Unit)?,
     inOverlay: Boolean = false,
 ) {
     val apps = repo.apps
@@ -136,6 +136,13 @@ fun Taskbar(
                     TaskbarButton(selected = panel == Panel.TASK_VIEW, onClick = { toggle(Panel.TASK_VIEW) }) {
                         TaskViewGlyph(Ui.text, 22.dp)
                     }
+                    if (settings.taskbarSplitButton) {
+                        val ctx = LocalContext.current
+                        TaskbarButton(onClick = {
+                            onPanel(Panel.NONE)
+                            AppLaunch.splitCurrent(ctx)
+                        }) { SplitGlyph(Ui.text, 22.dp) }
+                    }
                     Row(
                         Modifier.weight(1f, fill = false).horizontalScroll(rememberScrollState()),
                         verticalAlignment = Alignment.CenterVertically,
@@ -167,7 +174,9 @@ private fun NavButtons(onPanel: (Panel) -> Unit) {
         }
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        TaskbarButton(onClick = { onPanel(Panel.NONE) }) { BackGlyph(Ui.text, 20.dp) }
+        TaskbarButton(onClick = { global(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK) }) {
+            BackGlyph(Ui.text, 20.dp)
+        }
         TaskbarButton(onClick = { global(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME) }) {
             HomeGlyph(Ui.text, 20.dp)
         }
@@ -202,7 +211,7 @@ private fun TaskbarApp(
     settings: LauncherSettings,
     accent: Color,
     running: Boolean,
-    onRename: (AppInfo) -> Unit,
+    onRename: ((AppInfo) -> Unit)?,
     onLaunched: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -232,10 +241,7 @@ private fun TaskbarApp(
             }
         }
         val entries = buildList {
-            add(MenuEntry("Open in window") {
-                WindowMode.open(context, app)
-                onLaunched()
-            })
+            addAll(windowEntries(context, app, settings, onLaunched))
             addAll(pinEntries(context, app, settings, onRename))
             if (app.key in settings.taskbarPinned) {
                 add(MenuEntry("Move left") { settings.moveInTaskbar(app.key, -1) })

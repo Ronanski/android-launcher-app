@@ -283,7 +283,7 @@ private fun DesktopItemView(
                 expanded = menu,
                 onDismiss = { menu = false },
                 app = app,
-                entries = listOf(MenuEntry("Open in window") { WindowMode.open(context, app) }) +
+                entries = windowEntries(context, app, settings) +
                     pinEntries(context, app, settings, onRename, includeDesktop = false) +
                     MenuEntry("Remove from desktop") { settings.removeFromDesktop(item.id) },
             )

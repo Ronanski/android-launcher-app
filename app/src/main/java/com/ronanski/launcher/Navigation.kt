@@ -28,13 +28,16 @@ class NavGestureOverlay(private val service: AccessibilityService) {
     private val wm = service.getSystemService(WindowManager::class.java)
     private val views = mutableListOf<View>()
 
-    fun apply(enabled: Boolean, edgeDp: Int) {
+    fun apply(enabled: Boolean, edgeDp: Int, includeBottom: Boolean = true) {
         remove()
         if (!enabled || wm == null) return
         val dm = service.resources.displayMetrics
         val thick = (edgeDp.coerceIn(6, 40) * dm.density).toInt()
         val sideHeight = (dm.heightPixels * 0.6f).toInt()
-        add(Edge.BOTTOM, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, (dm.widthPixels * 0.7f).toInt(), thick)
+        if (includeBottom) {
+            // Just above the system navigation bar, so the 3 buttons stay tappable.
+            add(Edge.BOTTOM, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, (dm.widthPixels * 0.7f).toInt(), thick, navBarHeight())
+        }
         add(Edge.LEFT, Gravity.START or Gravity.CENTER_VERTICAL, thick, sideHeight)
         add(Edge.RIGHT, Gravity.END or Gravity.CENTER_VERTICAL, thick, sideHeight)
     }
@@ -49,7 +52,17 @@ class NavGestureOverlay(private val service: AccessibilityService) {
         views.clear()
     }
 
-    private fun add(edge: Edge, gravity: Int, width: Int, height: Int) {
+    private fun navBarHeight(): Int {
+        val w = wm ?: return 0
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            w.currentWindowMetrics.windowInsets
+                .getInsetsIgnoringVisibility(android.view.WindowInsets.Type.navigationBars()).bottom
+        } else {
+            0
+        }
+    }
+
+    private fun add(edge: Edge, gravity: Int, width: Int, height: Int, yOffset: Int = 0) {
         val view = EdgeView(service, edge) { action -> service.performGlobalAction(action) }
         val params = WindowManager.LayoutParams(
             width, height,
@@ -60,6 +73,7 @@ class NavGestureOverlay(private val service: AccessibilityService) {
             PixelFormat.TRANSLUCENT,
         )
         params.gravity = gravity
+        params.y = yOffset
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) params.fitInsetsTypes = 0
         try {
             wm?.addView(view, params)

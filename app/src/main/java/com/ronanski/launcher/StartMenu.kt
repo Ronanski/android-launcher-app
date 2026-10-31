@@ -73,7 +73,7 @@ fun StartMenu(
     font: FontFamily,
     focusSearch: Boolean,
     onClose: () -> Unit,
-    onRename: (AppInfo) -> Unit,
+    onRename: ((AppInfo) -> Unit)?,
 ) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -236,7 +236,7 @@ private fun SearchResults(
     repo: AppRepository,
     settings: LauncherSettings,
     font: FontFamily,
-    onRename: (AppInfo) -> Unit,
+    onRename: ((AppInfo) -> Unit)?,
     close: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -386,7 +386,7 @@ private fun AppTile(
     repo: AppRepository,
     settings: LauncherSettings,
     font: FontFamily,
-    onRename: (AppInfo) -> Unit,
+    onRename: ((AppInfo) -> Unit)?,
     close: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -424,7 +424,7 @@ private fun AppTile(
         }
         AppContextMenu(
             menu, { menu = false }, app,
-            listOf(MenuEntry("Open in window") { WindowMode.open(context, app); close() }) + pinEntries(context, app, settings, onRename),
+            windowEntries(context, app, settings, close) + pinEntries(context, app, settings, onRename),
             close,
         )
     }
@@ -437,7 +437,7 @@ private fun AppRow(
     repo: AppRepository,
     settings: LauncherSettings,
     font: FontFamily,
-    onRename: (AppInfo) -> Unit,
+    onRename: ((AppInfo) -> Unit)?,
     close: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -465,7 +465,7 @@ private fun AppRow(
             AppIconImage(app, repo, settings, 32.dp)
             Text(repo.label(app), color = Ui.text, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        val entries = listOf(MenuEntry("Open in window") { WindowMode.open(context, app); close() }) +
+        val entries = windowEntries(context, app, settings, close) +
             pinEntries(context, app, settings, onRename) +
             MenuEntry(if (app.key in settings.hidden) "Unhide" else "Hide from All apps") { settings.toggleHidden(app.key) }
         AppContextMenu(menu, { menu = false }, app, entries, close)

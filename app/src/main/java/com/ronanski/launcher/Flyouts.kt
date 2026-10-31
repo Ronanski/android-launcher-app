@@ -610,8 +610,8 @@ private fun TaskCard(
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            SmallButton("Window", font) { WindowMode.open(context, app) }
-            SmallButton("Split", font) { AppLaunch.openSplit(context, app) }
+            if (settings.showWindowOptions) SmallButton("Window", font) { WindowMode.open(context, app) }
+            SmallButton("Split", font) { AppLaunch.splitWithCurrent(context, app) }
         }
     }
     Icon(

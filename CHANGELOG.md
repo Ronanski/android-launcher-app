@@ -2,6 +2,20 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.9.0 — 2026-10-31
+
+**Split screen at mga ayos mula sa audit** (tingnan ang `AUDIT.md`).
+
+- **Split screen,** gaya ng sa mga bagong tablet:
+  - Long-press ang isang app sa taskbar → *Split with current app*. Ilalagay nito ang app sa tabi ng app na bukas ngayon.
+  - May bagong **Split button** sa taskbar: hinahati ang app na bukas, tapos pipiliin mo ang pangalawa.
+- Nakatago na by default ang mga "Open in window" option, dahil HyperOS ang kumokontrol sa mga window. Pwedeng ibalik sa Settings → Windows & multitasking.
+- Ayos: talagang nagba-Back na ang Back button sa overlay taskbar.
+- Ayos: nakatago ang overlay taskbar at Start kapag naka-lock ang screen.
+- Ayos: hindi na tinatakpan ng bottom gesture strip ang nav bar o ang taskbar.
+- Ayos: hindi na gumagawa ng duplicate na app ang split screen.
+- Ayos: nakatago ang "Rename" sa overlay taskbar dahil hindi ito gumagana doon.
+
 ## 0.8.3 — 2026-10-31
 
 - Close app / Close all: sariling paghahanap na sa buong screen ng App info para sa Force stop button. Hindi ito nahanap ng dating paraan sa bagong layout ng Android Settings, at nakita ito sa emulator test.

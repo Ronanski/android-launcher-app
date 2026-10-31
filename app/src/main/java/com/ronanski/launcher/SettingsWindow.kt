@@ -356,6 +356,15 @@ private fun SettingsPageContent(
                         repo.refreshRecents()
                     }
                 }
+                card { SwitchRow("Split screen button on the taskbar", s.taskbarSplitButton) { s.taskbarSplitButton = it } }
+                card {
+                    Text(
+                        "Split screen: open an app, then long-press another app on the taskbar → \"Split with current app\". " +
+                            "Or tap the Split button to split the app in front, then pick the second app.",
+                        color = Ui.subtle,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
                 card { SwitchRow("24-hour clock", s.clock24h) { s.clock24h = it } }
                 card { SwitchRow("Hide Android status bar on the desktop (swipe down from the top to show it)", s.hideStatusBar) { s.hideStatusBar = it } }
                 card { SwitchRow("Hide Android navigation bar on the desktop", s.hideNavBar) { s.hideNavBar = it } }
@@ -426,6 +435,7 @@ private fun SettingsPageContent(
             }
 
             SettingsPage.MULTITASKING -> {
+                card { SwitchRow("Show \"Open in window\" options in app menus", s.showWindowOptions) { s.showWindowOptions = it } }
                 card { SwitchRow("Open apps in windows", s.openInWindows) { s.openInWindows = it } }
                 card {
                     val supported = remember(tick) { WindowMode.supported(context) }

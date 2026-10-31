@@ -19,6 +19,10 @@ object LauncherUi {
     /** Set by the overlay taskbar: opens one of its panels (Start, etc.) above every app. */
     var overlayPanel: ((Panel) -> Unit)? = null
 
+    /** Package of the app in front (from accessibility window events), used for split screen. */
+    @Volatile
+    var foregroundPackage: String? = null
+
     const val EXTRA_SETTINGS_PAGE = "open_settings_page"
 
     /** Brings the launcher to the front and opens its Settings window (works from anywhere). */

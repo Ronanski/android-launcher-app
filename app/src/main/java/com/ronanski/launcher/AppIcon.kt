@@ -75,12 +75,23 @@ fun AppIconImage(
 
 class MenuEntry(val label: String, val action: () -> Unit)
 
+/** "Open in window" only when the user turned window options on (HyperOS controls those windows). */
+fun windowEntries(context: android.content.Context, app: AppInfo, settings: LauncherSettings, after: () -> Unit = {}): List<MenuEntry> =
+    if (settings.showWindowOptions) {
+        listOf(MenuEntry("Open in window") {
+            WindowMode.open(context, app)
+            after()
+        })
+    } else {
+        emptyList()
+    }
+
 /** Standard Pin to Start / Pin to taskbar / desktop / rename entries. */
 fun pinEntries(
     context: android.content.Context,
     app: AppInfo,
     settings: LauncherSettings,
-    onRename: (AppInfo) -> Unit,
+    onRename: ((AppInfo) -> Unit)?,
     includeDesktop: Boolean = true,
 ): List<MenuEntry> = buildList {
     add(MenuEntry(if (app.key in settings.startPinned) "Unpin from Start" else "Pin to Start") { settings.toggleStart(app.key) })
@@ -88,7 +99,7 @@ fun pinEntries(
     if (includeDesktop && !settings.isOnDesktop(app.key)) {
         add(MenuEntry("Add to desktop") { DesktopGrid.addApp(context, settings, app.key) })
     }
-    add(MenuEntry("Rename") { onRename(app) })
+    if (onRename != null) add(MenuEntry("Rename") { onRename(app) })
 }
 
 /** Right-click style menu: app shortcuts, caller's entries, then split screen / info / uninstall. */
@@ -123,8 +134,8 @@ fun AppContextMenu(
         if (shortcuts.isNotEmpty()) HorizontalDivider()
         entries.forEach { entry -> item(entry.label, entry.action) }
         if (entries.isNotEmpty()) HorizontalDivider()
-        item("Open in split screen") {
-            AppLaunch.openSplit(context, app)
+        item("Split with current app") {
+            AppLaunch.splitWithCurrent(context, app)
             onLaunched()
         }
         item("App info") { AppLaunch.appInfo(context, app) }

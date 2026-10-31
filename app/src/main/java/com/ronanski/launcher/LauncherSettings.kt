@@ -107,6 +107,9 @@ class LauncherSettings(context: Context) {
     var taskbarCentered by boolPref("taskbar_centered", true)
     var showRecentApps by boolPref("taskbar_recents", true)
     var openInWindows by boolPref("open_in_windows", false)
+    /** Show "Open in window" actions (off by default: HyperOS controls those windows). */
+    var showWindowOptions by boolPref("show_window_options", false)
+    var taskbarSplitButton by boolPref("taskbar_split_button", true)
     /** How long an app counts as "open" on the taskbar after it was last used. */
     var recentHours by intPref("recent_hours", 4)
     /** App key -> time the user closed it from Task View / taskbar (epoch ms as string). */

@@ -249,3 +249,14 @@ fun RecentsGlyph(color: Color, size: Dp) {
         drawRoundRect(color, Offset(s * 0.22f, s * 0.22f), Size(s * 0.56f, s * 0.56f), CornerRadius(s * 0.08f), style = Stroke(s * 0.08f))
     }
 }
+
+/** Two panes side by side: split screen. */
+@Composable
+fun SplitGlyph(color: Color, size: Dp) {
+    Canvas(Modifier.size(size)) {
+        val s = this.size.minDimension
+        val stroke = Stroke(width = s * 0.08f)
+        drawRoundRect(color, Offset(s * 0.08f, s * 0.2f), Size(s * 0.38f, s * 0.6f), CornerRadius(s * 0.06f), style = stroke)
+        drawRoundRect(color, Offset(s * 0.54f, s * 0.2f), Size(s * 0.38f, s * 0.6f), CornerRadius(s * 0.06f), style = stroke)
+    }
+}

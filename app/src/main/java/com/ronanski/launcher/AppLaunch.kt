@@ -41,14 +41,51 @@ object AppLaunch {
                 .addCategory(Intent.CATEGORY_LAUNCHER)
                 .setComponent(app.component)
                 .addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT or
-                        Intent.FLAG_ACTIVITY_MULTIPLE_TASK,
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT,
                 )
             context.startActivity(intent)
         } catch (e: Exception) {
             openFullscreen(context, app)
         }
+    }
+
+    private fun isAppInFront(context: Context): Boolean {
+        val fg = LauncherUi.foregroundPackage
+        return fg != null && fg != context.packageName && fg != "com.android.systemui"
+    }
+
+    /** Taskbar Split button: splits the app in front; then pick the second app from the taskbar. */
+    fun splitCurrent(context: Context) {
+        if (LauncherAccessibilityService.instance == null) {
+            Actions.toast(context, "Turn on the Pad Launcher accessibility service for split screen")
+            Actions.openAccessibilitySettings(context)
+            return
+        }
+        if (!isAppInFront(context)) {
+            Actions.toast(context, "Open an app first, then tap Split")
+            return
+        }
+        if (LauncherAccessibilityService.perform(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN)) {
+            Actions.toast(context, "Now pick the second app")
+        } else {
+            Actions.toast(context, "This device didn't allow split screen")
+        }
+    }
+
+    /** Puts [app] next to the app in front, like dragging an app to the side on recent tablets. */
+    fun splitWithCurrent(context: Context, app: AppInfo) {
+        if (LauncherAccessibilityService.instance == null) {
+            Actions.toast(context, "Turn on the Pad Launcher accessibility service for split screen")
+            Actions.openAccessibilitySettings(context)
+            return
+        }
+        if (!isAppInFront(context) || LauncherUi.foregroundPackage == app.component.packageName) {
+            Actions.toast(context, "Open another app first, then choose Split with current app")
+            openFullscreen(context, app)
+            return
+        }
+        LauncherAccessibilityService.perform(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN)
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ openSplit(context, app) }, 700)
     }
 
     fun appInfo(context: Context, app: AppInfo) {
