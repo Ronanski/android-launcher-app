@@ -446,6 +446,13 @@ private fun QsEditor(chosen: List<String>, font: FontFamily, accent: Color, onCh
     }
 }
 
+private class QsTile(
+    val label: String,
+    val on: Boolean,
+    val glyph: @Composable (Color) -> Unit,
+    val action: () -> Unit,
+)
+
 @Composable
 private fun SliderRow(
     icon: @Composable () -> Unit,
