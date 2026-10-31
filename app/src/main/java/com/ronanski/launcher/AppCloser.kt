@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
@@ -29,6 +30,7 @@ object AppCloser {
     private val CONFIRM_TEXTS = listOf("ok", "force stop", "yes", "sige", "aceptar")
 
     val busy: Boolean get() = stage != Stage.IDLE
+    private const val TAG = "PadCloser"
 
     fun close(context: Context, packages: Collection<String>) {
         val pkgs = packages.filter { it != context.packageName }.distinct()
@@ -59,6 +61,7 @@ object AppCloser {
         }
         current = pkg
         stage = Stage.FIND_BUTTON
+        Log.d(TAG, "closing $pkg: opening App info")
         deadline = System.currentTimeMillis() + 6000
         try {
             context.startActivity(
@@ -83,24 +86,45 @@ object AppCloser {
             finishCurrent(service, goBack = true)
             return
         }
-        val root = service.rootInActiveWindow ?: return
+        // Look in every window (the dialog may not be the "active" one on some ROMs).
+        val roots = buildList {
+            service.rootInActiveWindow?.let { add(it) }
+            try {
+                service.windows.mapNotNullTo(this) { it.root }
+            } catch (e: Exception) {
+            }
+        }
+        if (roots.isEmpty()) return
         when (stage) {
             Stage.FIND_BUTTON -> {
-                val button = findByTexts(root, FORCE_STOP_TEXTS) ?: return
+                val button = roots.firstNotNullOfOrNull { findByTexts(it, FORCE_STOP_TEXTS) }
+                if (button == null) {
+                    Log.d(TAG, "no Force stop button yet (event ${event?.eventType} from ${event?.packageName})")
+                    return
+                }
+                Log.d(TAG, "found '${button.text}' enabled=${button.isEnabled} clickable=${button.isClickable}")
                 if (!button.isEnabled) {
                     // Already stopped.
                     finishCurrent(service, goBack = true)
                     return
                 }
-                if (click(button)) {
+                val clicked = click(button)
+                Log.d(TAG, "clicked Force stop: $clicked")
+                if (clicked) {
                     stage = Stage.CONFIRM
                     deadline = System.currentTimeMillis() + 4000
                 }
             }
             Stage.CONFIRM -> {
                 // The confirmation dialog: press its positive button ("OK" / "Force stop").
-                val confirm = findByTexts(root, CONFIRM_TEXTS, exact = true, preferLast = true) ?: return
-                if (click(confirm)) {
+                val confirm = roots.firstNotNullOfOrNull { findByTexts(it, CONFIRM_TEXTS, exact = true, preferLast = true) }
+                if (confirm == null) {
+                    Log.d(TAG, "no confirm button yet")
+                    return
+                }
+                val clicked = click(confirm)
+                Log.d(TAG, "clicked confirm '${confirm.text}': $clicked")
+                if (clicked) {
                     handler.postDelayed({ finishCurrent(service, goBack = true) }, 400)
                     stage = Stage.IDLE
                 }
@@ -110,6 +134,7 @@ object AppCloser {
     }
 
     private fun finishCurrent(context: Context, goBack: Boolean) {
+        Log.d(TAG, "finished $current (stage $stage)")
         if (goBack) LauncherAccessibilityService.perform(AccessibilityService.GLOBAL_ACTION_BACK)
         current = null
         stage = Stage.IDLE

@@ -162,12 +162,19 @@ sleep 3
 adb shell input tap $((258 * DP)) "$TBY"
 sleep 2
 shot 11b-task-view-before-close 1
+adb logcat -c || true
 adb shell input tap $((W - 294 * DP)) $((50 * DP))
-sleep 14
+sleep 2
+shot 11b2-closing-step1 0
+sleep 2
+shot 11b3-closing-step2 0
+sleep 10
 {
   for pkg in com.google.android.deskclock com.google.android.calendar; do
     if adb shell pidof "$pkg" >/dev/null 2>&1; then echo "$pkg: STILL RUNNING"; else echo "$pkg: closed"; fi
   done
+  echo "--- PadCloser log ---"
+  adb logcat -d -s PadCloser || true
 } > "$OUT/close-test.txt"
 cat "$OUT/close-test.txt"
 shot 11c-after-close-all 1
