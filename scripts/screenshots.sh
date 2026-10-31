@@ -175,9 +175,10 @@ adb shell input keyevent KEYCODE_BACK
 adb shell settings put system user_rotation 0
 sleep 3
 
-# 15-16) Phone-sized screen
+# 15-16) Phone-sized screen with a large system font (catches clipped text)
 adb shell wm size 1080x2340
 adb shell wm density 440
+adb shell settings put system font_scale 1.3
 sleep 3
 go_home
 shot 15-phone-desktop 4
@@ -186,6 +187,7 @@ shot 16-phone-start
 adb shell input keyevent KEYCODE_BACK
 adb shell wm size reset
 adb shell wm density reset
+adb shell settings put system font_scale 1.0
 
 # Any crashes during the run
 adb logcat -d -b crash > "$OUT/crash-log.txt" || true

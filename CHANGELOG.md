@@ -2,6 +2,12 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.5.2 — 2026-10-31
+
+- Ayos: hindi na napuputol ang orasan at petsa sa taskbar kapag malaki ang system font size.
+- Settings → Permissions & setup: gabay sa "Allow restricted settings" kapag naka-grey ang accessibility o notification access.
+- Sinusubukan na rin sa emulator ang malaking font size.
+
 ## 0.5.1 — 2026-10-31
 
 - **Brightness slider:** tama na ang level sa Xiaomi (dati, mga 13% ang pakita kahit max) at sumusunod na sa curve ng slider ng Android.

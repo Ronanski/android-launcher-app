@@ -268,6 +268,10 @@ private fun SystemTray(
     val timeFormat = remember(is24h) { SimpleDateFormat(if (is24h) "HH:mm" else "h:mm a", Locale.getDefault()) }
     val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
     val notifCount = NotificationStore.items.value.size
+    // Tray text is sized in dp so a large system font size can't push it out of the taskbar.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val trayText = with(density) { 12.dp.toSp() }
+    val badgeText = with(density) { 10.dp.toSp() }
     val accent = Color(settings.accentColor)
 
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -301,9 +305,15 @@ private fun SystemTray(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(horizontalAlignment = Alignment.End) {
-                Text(timeFormat.format(Date(now)), color = Color.White, fontSize = 12.sp, fontFamily = font, textAlign = TextAlign.End)
+                Text(
+                    timeFormat.format(Date(now)), color = Color.White, fontSize = trayText, lineHeight = trayText * 1.2f,
+                    fontFamily = font, textAlign = TextAlign.End, maxLines = 1, softWrap = false,
+                )
                 if (!compact) {
-                    Text(dateFormat.format(Date(now)), color = Color.White, fontSize = 12.sp, fontFamily = font, textAlign = TextAlign.End)
+                    Text(
+                        dateFormat.format(Date(now)), color = Color.White, fontSize = trayText, lineHeight = trayText * 1.2f,
+                        fontFamily = font, textAlign = TextAlign.End, maxLines = 1, softWrap = false,
+                    )
                 }
             }
             if (notifCount > 0) {
@@ -312,7 +322,7 @@ private fun SystemTray(
                     Modifier.size(20.dp).background(accent, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(if (notifCount > 9) "9+" else notifCount.toString(), color = Color.Black, fontSize = 10.sp)
+                    Text(if (notifCount > 9) "9+" else notifCount.toString(), color = Color.Black, fontSize = badgeText)
                 }
             }
         }

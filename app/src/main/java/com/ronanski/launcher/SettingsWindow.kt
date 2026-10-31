@@ -473,6 +473,15 @@ private fun SettingsPageContent(
                 }
                 card {
                     Text(
+                        "Accessibility or Notification access greyed out? That's Android's \"Restricted settings\" for apps " +
+                            "not installed from the Play Store. Tap the greyed-out Pad Launcher entry once, then go to " +
+                            "Settings → Apps → Pad Launcher → ⋮ (top right) → Allow restricted settings, and try again.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+                card {
+                    Text(
                         "On Xiaomi: Settings → Apps → Pad Launcher → turn on Autostart and set Battery saver to \"No restrictions\", " +
                             "otherwise HyperOS may stop the accessibility and notification services.",
                         color = Color.Gray,
