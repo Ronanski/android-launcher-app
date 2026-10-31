@@ -16,7 +16,7 @@ Mga bug na nakita sa pagbasa ng code at sa emulator test, at ang status ng bawat
 | 10 | Hindi nasusulat ang screenshots kapag sabay ang dalawang test run | CI | Naayos |
 | 11 | Nagiging "Not working" ang accessibility pagkatapos ng crash | Android | Epekto ng #1; i-off tapos i-on ulit ang service |
 
-| 12 | Hindi nahahati ang screen kapag pinindot ang Split button (emulator, Android 14) | AppLaunch | Sinusuri (may logging na) |
+| 12 | Hindi nahahati ang screen kapag pinindot ang Split button (emulator, Android 14) | AppLaunch | Bukas pa. Ayon sa log, tinanggihan ng Android 14 ang `GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN` (`false`). Susunod na subukan: buksan ang pangalawang app gamit ang `FLAG_ACTIVITY_LAUNCH_ADJACENT` mula sa isang Activity. |
 
 ## Mga limitasyon ng Android/HyperOS (hindi bug ng launcher)
 
