@@ -102,11 +102,7 @@ fun HomeScreen(
                     }
                 }
 
-                AnimatedVisibility(
-                    visible = startOpen.value,
-                    enter = slideInVertically { it / 6 } + fadeIn(),
-                    exit = slideOutVertically { it / 6 } + fadeOut(),
-                ) {
+                StartOverlay(visible = startOpen.value) {
                     StartMenu(
                         settings = settings,
                         repo = repo,
@@ -163,6 +159,16 @@ fun HomeScreen(
             },
         )
     }
+}
+
+/** Kept outside the Column so the non-scoped AnimatedVisibility overload is used. */
+@Composable
+private fun StartOverlay(visible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically { it / 6 } + fadeIn(),
+        exit = slideOutVertically { it / 6 } + fadeOut(),
+    ) { content() }
 }
 
 @Composable
