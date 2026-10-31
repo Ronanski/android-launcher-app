@@ -2,6 +2,10 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.8.3 — 2026-10-31
+
+- Close app / Close all: sariling paghahanap na sa buong screen ng App info para sa Force stop button. Hindi ito nahanap ng dating paraan sa bagong layout ng Android Settings, at nakita ito sa emulator test.
+
 ## 0.8.2 — 2026-10-31
 
 - Close app / Close all: hinahanap na ang Force stop at OK sa lahat ng bukas na window, hindi lang sa aktibo. May dagdag na logging para masuri.

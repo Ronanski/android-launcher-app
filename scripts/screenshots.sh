@@ -150,7 +150,7 @@ adb shell input tap $((W - 210 * DP)) $((50 * DP))
 shot 11-task-view-cleared
 adb shell input keyevent KEYCODE_BACK
 
-# 11b) Task View -> Close all: really closes the apps (force stop through the accessibility service)
+# 11b) Task View -> Close all: really closes the apps (force stop through the accessibility service) 
 adb shell settings put secure enabled_accessibility_services "$PKG/$PKG.LauncherAccessibilityService"
 adb shell settings put secure accessibility_enabled 1
 for pkg in com.google.android.deskclock com.google.android.calendar; do
@@ -269,3 +269,4 @@ adb logcat -d -b crash > "$OUT/crash-log.txt" || true
 echo "Crash log lines: $(wc -l < "$OUT/crash-log.txt")"
 
 ls -la "$OUT"
+# rerun 1793455282

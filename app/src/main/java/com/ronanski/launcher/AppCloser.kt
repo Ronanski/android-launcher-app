@@ -99,7 +99,7 @@ object AppCloser {
             Stage.FIND_BUTTON -> {
                 val button = roots.firstNotNullOfOrNull { findByTexts(it, FORCE_STOP_TEXTS) }
                 if (button == null) {
-                    Log.d(TAG, "no Force stop button yet (event ${event?.eventType} from ${event?.packageName})")
+                    Log.d(TAG, "no Force stop yet: ${roots.size} windows, $lastVisited nodes (event from ${event?.packageName})")
                     return
                 }
                 Log.d(TAG, "found '${button.text}' enabled=${button.isEnabled} clickable=${button.isClickable}")
@@ -141,25 +141,40 @@ object AppCloser {
         if (queue.isNotEmpty()) handler.postDelayed({ next(context) }, 500)
     }
 
+    /**
+     * Walks the whole node tree (findAccessibilityNodeInfosByText misses some Settings layouts)
+     * and returns nodes whose text or description matches.
+     */
     private fun findByTexts(
         root: AccessibilityNodeInfo,
         texts: List<String>,
         exact: Boolean = false,
         preferLast: Boolean = false,
     ): AccessibilityNodeInfo? {
-        val found = texts.flatMap { t ->
-            try {
-                root.findAccessibilityNodeInfosByText(t) ?: emptyList()
-            } catch (e: Exception) {
-                emptyList()
+        val found = mutableListOf<AccessibilityNodeInfo>()
+        val stack = ArrayDeque<AccessibilityNodeInfo>()
+        stack.addLast(root)
+        var visited = 0
+        while (stack.isNotEmpty() && visited < 3000) {
+            val node = stack.removeLast()
+            visited++
+            val label = (node.text ?: node.contentDescription)?.toString()?.trim()?.lowercase()
+            if (label != null && label.isNotEmpty()) {
+                val match = if (exact) label in texts else texts.any { label.contains(it) }
+                if (match && (!exact || node.isEnabled)) found += node
             }
-        }.filter { node ->
-            if (exact && !node.isEnabled) return@filter false
-            val label = (node.text ?: node.contentDescription)?.toString()?.trim()?.lowercase() ?: return@filter false
-            if (exact) label in texts else texts.any { label.contains(it) }
+            for (i in node.childCount - 1 downTo 0) {
+                try {
+                    node.getChild(i)?.let { stack.addLast(it) }
+                } catch (e: Exception) {
+                }
+            }
         }
+        lastVisited = visited
         return if (preferLast) found.lastOrNull() else found.firstOrNull()
     }
+
+    private var lastVisited = 0
 
     /** Clicks the node or its nearest clickable parent. */
     private fun click(node: AccessibilityNodeInfo): Boolean {
