@@ -122,7 +122,8 @@ fun StartMenu(
                 .widthIn(max = 680.dp)
                 .fillMaxWidth()
                 .heightIn(max = 760.dp)
-                .fillMaxHeight(0.86f)
+                // While searching (keyboard open) use all the room above the keyboard.
+                .fillMaxHeight(if (query.isNotBlank()) 1f else 0.86f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(panelColor(settings))
                 .border(1.dp, Ui.text.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
@@ -198,7 +199,8 @@ fun StartMenu(
                     }
                 }
             }
-            // Bottom bar
+            // Bottom bar (hidden while searching so results get the space)
+            if (query.isBlank()) {
             HorizontalDivider(color = Ui.text.copy(alpha = 0.08f))
             Row(
                 Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 24.dp),
@@ -220,6 +222,7 @@ fun StartMenu(
                 }
                 Spacer(Modifier.weight(1f))
                 PowerButton(close)
+            }
             }
         }
     }
