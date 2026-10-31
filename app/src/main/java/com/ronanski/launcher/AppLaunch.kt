@@ -10,7 +10,16 @@ import android.os.Process
 object AppLaunch {
     private fun launcherApps(context: Context) = context.getSystemService(LauncherApps::class.java)
 
+    /** Opens the app, as a window if "Open apps in windows" is on. */
     fun open(context: Context, app: AppInfo) {
+        if (context.launcherApp.settings.openInWindows) {
+            WindowMode.open(context, app)
+        } else {
+            openFullscreen(context, app)
+        }
+    }
+
+    fun openFullscreen(context: Context, app: AppInfo) {
         try {
             launcherApps(context).startMainActivity(app.component, app.user, null, null)
         } catch (e: Exception) {
@@ -24,7 +33,7 @@ object AppLaunch {
      */
     fun openSplit(context: Context, app: AppInfo) {
         if (app.user != Process.myUserHandle()) {
-            open(context, app)
+            openFullscreen(context, app)
             return
         }
         try {
@@ -38,7 +47,7 @@ object AppLaunch {
                 )
             context.startActivity(intent)
         } catch (e: Exception) {
-            open(context, app)
+            openFullscreen(context, app)
         }
     }
 

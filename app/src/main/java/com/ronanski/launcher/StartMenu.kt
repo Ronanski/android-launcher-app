@@ -211,8 +211,7 @@ fun StartMenu(
                     Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .clickable {
-                            close()
-                            Actions.perform(context, GestureAction.LAUNCHER_SETTINGS) {}
+                            LauncherUi.openSettings?.invoke(null) ?: Actions.perform(context, GestureAction.LAUNCHER_SETTINGS) {}
                         }
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -327,7 +326,11 @@ private fun AppTile(
                 textAlign = TextAlign.Center,
             )
         }
-        AppContextMenu(menu, { menu = false }, app, pinEntries(context, app, settings, onRename), close)
+        AppContextMenu(
+            menu, { menu = false }, app,
+            listOf(MenuEntry("Open in window") { WindowMode.open(context, app); close() }) + pinEntries(context, app, settings, onRename),
+            close,
+        )
     }
 }
 
@@ -366,7 +369,8 @@ private fun AppRow(
             AppIconImage(app, repo, settings, 32.dp)
             Text(repo.label(app), color = Color.White, fontFamily = font, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        val entries = pinEntries(context, app, settings, onRename) +
+        val entries = listOf(MenuEntry("Open in window") { WindowMode.open(context, app); close() }) +
+            pinEntries(context, app, settings, onRename) +
             MenuEntry(if (app.key in settings.hidden) "Unhide" else "Hide from All apps") { settings.toggleHidden(app.key) }
         AppContextMenu(menu, { menu = false }, app, entries, close)
     }

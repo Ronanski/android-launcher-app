@@ -57,6 +57,10 @@ go_home() {
 
 adb shell cmd package set-home-activity "$PKG/.MainActivity"
 adb shell appwidget grantbind --package "$PKG" --user 0 || true
+adb shell appops set "$PKG" GET_USAGE_STATS allow || true
+adb shell cmd notification allow_listener "$PKG/$PKG.LauncherNotificationService" || true
+adb shell cmd notification post -S bigtext -t "Meeting at 3 PM" demo1 "Project sync with the team in Conference Room B" || true
+adb shell cmd notification post -t "Battery optimized" demo2 "Pad Launcher is ready to use" || true
 
 # Status bar height in px (24dp at the emulator density) — desktop coordinates start below it.
 DENSITY=$(adb shell wm density | tr -d '\r' | awk '/Physical density/ {print $3}')
@@ -96,13 +100,28 @@ adb shell input tap $((115 * DP)) $((SB + 230 * DP))
 shot 05-desktop-widget 6
 go_home
 
-# 6) Settings (swipe down on empty desktop is mapped to Launcher settings for this capture)
+TBY=$((H - 86 * DP))
+
+# 6) Notifications & calendar (tap the clock)
+go_home
 sleep 2
-adb shell input swipe $((W * 6 / 10)) $((H / 3)) $((W * 6 / 10)) $((H * 2 / 3)) 250
-shot 06-settings
+adb shell input tap $((W - 53 * DP)) "$TBY"
+shot 06-calendar-flyout
+
+# 7) Quick settings (tap Wi-Fi / volume / battery)
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+adb shell input tap $((W - 160 * DP)) "$TBY"
+shot 07-quick-settings
 adb shell input keyevent KEYCODE_BACK
 
-# 7) Personalized: left taskbar (Windows 10 style), purple accent, circle icons, serif font
+# 8) Settings window (swipe down on empty desktop is mapped to Launcher settings for this capture)
+sleep 1
+adb shell input swipe $((W * 6 / 10)) $((H / 3)) $((W * 6 / 10)) $((H * 2 / 3)) 250
+shot 08-settings
+adb shell input keyevent KEYCODE_BACK
+
+# 9) Personalized: left taskbar (Windows 10 style), purple accent, circle icons, serif font
 write_prefs '    <string name="icon_shape">circle</string>
     <string name="font">serif</string>
     <int name="accent_color" value="-4745994" />
@@ -111,6 +130,12 @@ write_prefs '    <string name="icon_shape">circle</string>
 go_home
 sleep 4
 adb shell input swipe $((W * 6 / 10)) $((H / 2)) $((W * 6 / 10)) $((H / 5)) 250
-shot 07-personalized-start
+shot 09-personalized-start
+adb shell input keyevent KEYCODE_BACK
+
+# 10) Task View (third taskbar button when the taskbar is left-aligned)
+sleep 1
+adb shell input tap $((122 * DP)) "$TBY"
+shot 10-task-view
 
 ls -la "$OUT"

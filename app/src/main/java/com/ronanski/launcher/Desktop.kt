@@ -207,8 +207,11 @@ private fun DesktopItemView(
                         Unit
                     }
                 },
-                onLongPress = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
-                onRelease = { menu = true },
+                onLongPress = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    menu = true
+                },
+                onRelease = { },
                 onDragStart = {
                     dragging = true
                     menu = false
@@ -280,7 +283,8 @@ private fun DesktopItemView(
                 expanded = menu,
                 onDismiss = { menu = false },
                 app = app,
-                entries = pinEntries(context, app, settings, onRename, includeDesktop = false) +
+                entries = listOf(MenuEntry("Open in window") { WindowMode.open(context, app) }) +
+                    pinEntries(context, app, settings, onRename, includeDesktop = false) +
                     MenuEntry("Remove from desktop") { settings.removeFromDesktop(item.id) },
             )
         }

@@ -13,12 +13,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
 
 class MainActivity : ComponentActivity() {
-    private val startOpen = mutableStateOf(false)
-    private val searchFocus = mutableStateOf(false)
-    private val widgetPicker = mutableStateOf(false)
+    private val panel = mutableStateOf(Panel.NONE)
+    private val settingsPage = mutableStateOf(SettingsPage.PERSONALIZATION)
 
     private var pendingWidgetId = -1
     private var pendingWidgetInfo: AppWidgetProviderInfo? = null
@@ -35,22 +38,31 @@ class MainActivity : ComponentActivity() {
         )
         val app = launcherApp
         app.widgets.cleanup(app.settings.desktop)
+        LauncherUi.openSettings = { page ->
+            if (page != null) settingsPage.value = page
+            panel.value = Panel.SETTINGS
+        }
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                // Back never closes the launcher; it only closes Start / the widget picker.
-                BackHandler {
-                    startOpen.value = false
-                    widgetPicker.value = false
+                // Shorter long-press than the system default, so app menus appear quickly.
+                val base = LocalViewConfiguration.current
+                val fast = remember(base) {
+                    object : ViewConfiguration by base {
+                        override val longPressTimeoutMillis: Long get() = 320L
+                    }
                 }
-                HomeScreen(
-                    settings = app.settings,
-                    repo = app.repo,
-                    widgets = app.widgets,
-                    startOpen = startOpen,
-                    searchFocus = searchFocus,
-                    widgetPicker = widgetPicker,
-                    onAddWidget = ::addWidget,
-                )
+                CompositionLocalProvider(LocalViewConfiguration provides fast) {
+                    // Back never closes the launcher; it only closes the open panel.
+                    BackHandler { panel.value = Panel.NONE }
+                    HomeScreen(
+                        settings = app.settings,
+                        repo = app.repo,
+                        widgets = app.widgets,
+                        panel = panel,
+                        settingsPage = settingsPage,
+                        onAddWidget = ::addWidget,
+                    )
+                }
             }
         }
     }
@@ -67,6 +79,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        LauncherUi.resumeTick.intValue++
         launcherApp.updater.checkIfDue()
         launcherApp.repo.refreshRecents()
     }
@@ -74,8 +87,12 @@ class MainActivity : ComponentActivity() {
     /** Pressing Home while already on the launcher closes Start and the widget picker. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        startOpen.value = false
-        widgetPicker.value = false
+        panel.value = Panel.NONE
+    }
+
+    override fun onDestroy() {
+        LauncherUi.openSettings = null
+        super.onDestroy()
     }
 
     // ---- Adding widgets: allocate id -> bind permission -> optional configure -> place ----

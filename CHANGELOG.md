@@ -2,6 +2,18 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.4.0 — 2026-10-31
+
+Mas Windows na.
+
+- **Taskbar:** iisang hanay na ang pinned at bukas/recent na apps, gaya ng Windows. May guhit sa ilalim ng mga bukas na app; mas mahaba at accent color ang guhit ng huling ginamit.
+- **Task View button** sa taskbar: listahan ng mga recent app, na may *Window*, *Split*, at *Android recents*.
+- **Open in window:** pwedeng buksan ang app bilang resizable window (Android freeform). Kapag naka-on sa device, ang system ang naglalagay ng title bar na may minimize, maximize, at close. May bagong setting na *Open apps in windows* at gabay sa Settings → Windows & multitasking.
+- **Pag-click sa orasan:** Notifications (kailangan ng notification access) at kalendaryo, gaya ng Windows 11.
+- **Pag-click sa Wi-Fi/volume/baterya:** Quick Settings na may tiles (Wi-Fi, Bluetooth, Flashlight, Auto-rotate, Do not disturb, Battery saver, Airplane, Location, All settings), brightness at volume slider, at baterya.
+- **Bagong Settings na parang Windows Settings:** bumubukas sa loob ng launcher, may menu sa kaliwa (Personalization, Desktop & icons, Taskbar, Start, Windows & multitasking, Gestures, Apps, Permissions & setup, Updates & about).
+- **Mas mabilis na hold menu:** lumalabas na ang menu habang naka-hold pa, at mas maikli ang long-press (320 ms).
+
 ## 0.3.1 — 2026-10-31
 
 - Mas solid ang default na kulay ng Start menu at taskbar (96% opacity), para hindi na kita ang desktop icons sa likod. Pwede pa ring baguhin sa Settings → Panel opacity.

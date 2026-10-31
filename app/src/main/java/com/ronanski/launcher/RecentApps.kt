@@ -21,17 +21,19 @@ object RecentApps {
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    fun recentPackages(context: Context): List<String> {
+    /** Package -> last used time, most recent first, for apps used in the last [hours]. */
+    fun recentPackages(context: Context, hours: Int = 12): List<Pair<String, Long>> {
         val usm = context.getSystemService(UsageStatsManager::class.java) ?: return emptyList()
         val now = System.currentTimeMillis()
+        val since = now - hours * 3600 * 1000L
         val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 2 * 24 * 3600 * 1000L, now)
             ?: return emptyList()
         return stats
-            .filter { it.lastTimeUsed > 0 && it.totalTimeInForeground > 0 && it.packageName != context.packageName }
-            .sortedByDescending { it.lastTimeUsed }
-            .map { it.packageName }
-            .distinct()
-            .take(12)
+            .filter { it.lastTimeUsed > since && it.totalTimeInForeground > 0 && it.packageName != context.packageName }
+            .groupBy { it.packageName }
+            .map { (pkg, list) -> pkg to list.maxOf { it.lastTimeUsed } }
+            .sortedByDescending { it.second }
+            .take(16)
     }
 
     fun openSettings(context: Context) {

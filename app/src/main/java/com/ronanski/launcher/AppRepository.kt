@@ -51,6 +51,10 @@ class AppRepository(private val context: Context, private val settings: Launcher
     var recentKeys by mutableStateOf<List<String>>(emptyList())
         private set
 
+    /** App key -> last time used. */
+    var recentTimes by mutableStateOf<Map<String, Long>>(emptyMap())
+        private set
+
     private val callback = object : LauncherApps.Callback() {
         override fun onPackageRemoved(packageName: String?, user: UserHandle?) = refresh()
         override fun onPackageAdded(packageName: String?, user: UserHandle?) = refresh()
@@ -110,9 +114,11 @@ class AppRepository(private val context: Context, private val settings: Launcher
                 }
             }
             val me = android.os.Process.myUserHandle()
-            recentKeys = packages.mapNotNull { pkg ->
-                apps.firstOrNull { it.component.packageName == pkg && it.user == me }?.key
+            val pairs = packages.mapNotNull { (pkg, time) ->
+                apps.firstOrNull { it.component.packageName == pkg && it.user == me }?.let { it.key to time }
             }
+            recentKeys = pairs.map { it.first }
+            recentTimes = pairs.toMap()
         }
     }
 

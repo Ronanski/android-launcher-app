@@ -40,14 +40,16 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
+/** Which pop-up is showing over the desktop (only one at a time, like Windows). */
+enum class Panel { NONE, START, SEARCH, CALENDAR, QUICK, TASK_VIEW, WIDGETS, SETTINGS }
+
 @Composable
 fun HomeScreen(
     settings: LauncherSettings,
     repo: AppRepository,
     widgets: WidgetManager,
-    startOpen: MutableState<Boolean>,
-    searchFocus: MutableState<Boolean>,
-    widgetPicker: MutableState<Boolean>,
+    panel: MutableState<Panel>,
+    settingsPage: MutableState<SettingsPage>,
     onAddWidget: (AppWidgetProviderInfo) -> Unit,
 ) {
     val context = LocalContext.current
@@ -56,12 +58,11 @@ fun HomeScreen(
     var menuAt by remember { mutableStateOf(Offset.Zero) }
     var renameTarget by remember { mutableStateOf<AppInfo?>(null) }
 
-    fun openStart(search: Boolean) {
-        searchFocus.value = search
-        startOpen.value = true
+    fun close() {
+        panel.value = Panel.NONE
     }
 
-    fun run(actionName: String) = Actions.perform(context, GestureAction.from(actionName)) { openStart(false) }
+    fun run(actionName: String) = Actions.perform(context, GestureAction.from(actionName)) { panel.value = Panel.START }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -90,7 +91,7 @@ fun HomeScreen(
                                 action()
                             })
                         }
-                        item("Add widget") { widgetPicker.value = true }
+                        item("Add widget") { panel.value = Panel.WIDGETS }
                         item("Sort icons by name") { DesktopGrid.sortApps(settings, repo) }
                         item("Change wallpaper") {
                             try {
@@ -98,43 +99,54 @@ fun HomeScreen(
                             } catch (e: Exception) {
                             }
                         }
-                        item("Personalize") { Actions.perform(context, GestureAction.LAUNCHER_SETTINGS) {} }
+                        item("Personalize") {
+                            settingsPage.value = SettingsPage.PERSONALIZATION
+                            panel.value = Panel.SETTINGS
+                        }
+                        item("Settings") {
+                            settingsPage.value = SettingsPage.DESKTOP
+                            panel.value = Panel.SETTINGS
+                        }
                     }
                 }
 
-                StartOverlay(visible = startOpen.value) {
+                val current = panel.value
+                StartOverlay(visible = current == Panel.START || current == Panel.SEARCH) {
                     StartMenu(
                         settings = settings,
                         repo = repo,
                         font = font,
-                        focusSearch = searchFocus.value,
-                        onClose = { startOpen.value = false },
+                        focusSearch = current == Panel.SEARCH,
+                        onClose = ::close,
                         onRename = { renameTarget = it },
                     )
+                }
+                when (current) {
+                    Panel.CALENDAR -> CalendarFlyout(settings, font, ::close)
+                    Panel.QUICK -> QuickSettingsFlyout(settings, font, ::close)
+                    Panel.TASK_VIEW -> TaskView(settings, repo, font, ::close)
+                    Panel.SETTINGS -> SettingsWindow(settings, repo, context.launcherApp.updater, settingsPage, ::close)
+                    else -> Unit
                 }
             }
             Taskbar(
                 settings = settings,
                 repo = repo,
                 font = font,
-                startOpen = startOpen.value,
-                onStartClick = {
-                    if (startOpen.value) startOpen.value = false else openStart(false)
-                },
-                onSearchClick = { openStart(true) },
+                panel = panel.value,
+                onPanel = { panel.value = it },
                 onRename = { renameTarget = it },
-                onAppLaunched = { startOpen.value = false },
             )
         }
 
-        if (widgetPicker.value) {
+        if (panel.value == Panel.WIDGETS) {
             WidgetPicker(
                 widgets = widgets,
                 onPick = {
-                    widgetPicker.value = false
+                    close()
                     onAddWidget(it)
                 },
-                onClose = { widgetPicker.value = false },
+                onClose = ::close,
             )
         }
     }
