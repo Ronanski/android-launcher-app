@@ -234,8 +234,11 @@ shot 22-overlay-start-over-app
 adb shell input keyevent KEYCODE_BACK
 sleep 1
 # Split button (after Back/Home/Recents, Start, Search, Task View) with the Settings app in front
+adb logcat -c || true
 adb shell input tap $((305 * DP)) "$TBY"
 shot 23-split-screen 4
+adb logcat -d -s PadSplit > "$OUT/split-test.txt" || true
+adb shell dumpsys activity activities | grep -iE "windowingMode|mode=" | head -20 >> "$OUT/split-test.txt" || true
 adb shell settings delete secure enabled_accessibility_services || true
 adb shell settings put secure accessibility_enabled 0
 go_home

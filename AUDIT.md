@@ -6,7 +6,7 @@ Mga bug na nakita sa pagbasa ng code at sa emulator test, at ang status ng bawat
 |---|-----|------|--------|
 | 1 | Nagka-crash ang launcher kapag naka-on ang overlay taskbar (walang katapusang pagtawag sa sarili sa `ComposeView.Content`) | OverlayTaskbar | Naayos sa 0.7.1 |
 | 2 | Tinatakpan ng overlay taskbar ang navigation bar (3 button) | OverlayTaskbar | Naayos sa 0.8.1 |
-| 3 | Hindi gumagana ang Close app / Close all (hindi mahanap ang Force stop button) | AppCloser | Inaayos (0.8.3: sariling paghahanap sa buong screen) |
+| 3 | Hindi gumagana ang Close app / Close all (hindi mahanap ang Force stop button) | AppCloser | Naayos sa 0.8.3. Napatunayan sa emulator na isinasara ang Clock at Calendar. |
 | 4 | Pinapasara lang ng Back button sa overlay taskbar ang panel, hindi nagba-Back sa app | Taskbar | Naayos sa 0.9.0 |
 | 5 | Lumalabas ang overlay taskbar at Start sa lock screen | Accessibility service | Naayos sa 0.9.0 (nakatago habang naka-lock) |
 | 6 | Tinatakpan ng bottom gesture strip ang mga button ng nav bar, at nakaharang sa taskbar | Navigation | Naayos sa 0.9.0 |
@@ -15,6 +15,8 @@ Mga bug na nakita sa pagbasa ng code at sa emulator test, at ang status ng bawat
 | 9 | Lumalabas ang "Open in window" kahit hindi ito kontrolado sa HyperOS | Mga menu | Naayos sa 0.9.0 (nakatago by default) |
 | 10 | Hindi nasusulat ang screenshots kapag sabay ang dalawang test run | CI | Naayos |
 | 11 | Nagiging "Not working" ang accessibility pagkatapos ng crash | Android | Epekto ng #1; i-off tapos i-on ulit ang service |
+
+| 12 | Hindi nahahati ang screen kapag pinindot ang Split button (emulator, Android 14) | AppLaunch | Sinusuri (may logging na) |
 
 ## Mga limitasyon ng Android/HyperOS (hindi bug ng launcher)
 

@@ -62,10 +62,13 @@ object AppLaunch {
             return
         }
         if (!isAppInFront(context)) {
+            android.util.Log.d("PadSplit", "no app in front (foreground=${LauncherUi.foregroundPackage})")
             Actions.toast(context, "Open an app first, then tap Split")
             return
         }
-        if (LauncherAccessibilityService.perform(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN)) {
+        val ok = LauncherAccessibilityService.perform(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN)
+        android.util.Log.d("PadSplit", "toggle split for ${LauncherUi.foregroundPackage}: $ok")
+        if (ok) {
             Actions.toast(context, "Now pick the second app")
         } else {
             Actions.toast(context, "This device didn't allow split screen")
