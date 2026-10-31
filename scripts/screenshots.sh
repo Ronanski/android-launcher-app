@@ -200,7 +200,7 @@ shot 21-overlay-taskbar-over-app 1
 adb shell input tap $((166 * DP)) "$TBY"
 shot 22-overlay-start-over-app
 adb shell input keyevent KEYCODE_BACK
-adb shell settings put secure enabled_accessibility_services ""
+adb shell settings delete secure enabled_accessibility_services || true
 adb shell settings put secure accessibility_enabled 0
 go_home
 
