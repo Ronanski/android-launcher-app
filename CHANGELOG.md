@@ -2,6 +2,10 @@
 
 Lahat ng update ng Pad Launcher. Ang bawat `## X.Y.Z` na section dito ay nagiging release notes sa GitHub Releases.
 
+## 0.3.1 — 2026-10-31
+
+- Mas solid ang default na kulay ng Start menu at taskbar (96% opacity), para hindi na kita ang desktop icons sa likod. Pwede pa ring baguhin sa Settings → Panel opacity.
+
 ## 0.3.0 — 2026-10-31
 
 Windows-style na launcher.

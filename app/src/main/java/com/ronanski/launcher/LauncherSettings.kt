@@ -97,7 +97,7 @@ class LauncherSettings(context: Context) {
     var showRecentApps by boolPref("taskbar_recents", false)
     var clock24h by boolPref("clock_24h", false)
     var startColumns by intPref("start_columns", 6)
-    var panelOpacity by intPref("panel_opacity", 88)
+    var panelOpacity by intPref("panel_opacity", 96)
     var accentColor by intPref("accent_color", 0xFF4CC2FF.toInt())
 
     // ---- Look ----
